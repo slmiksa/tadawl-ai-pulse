@@ -14,7 +14,7 @@ interface StockCardProps {
   market: 'us' | 'saudi';
   isFavorite?: boolean;
   onToggleFavorite?: (symbol: string) => void;
-  onViewDetails?: (symbol: string) => void;
+  onViewDetails?: (stockData: any) => void;
 }
 
 const StockCard: React.FC<StockCardProps> = ({
@@ -56,6 +56,22 @@ const StockCard: React.FC<StockCardProps> = ({
         return 'انتظار';
       default:
         return 'غير محدد';
+    }
+  };
+
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails({
+        symbol,
+        name,
+        price,
+        change,
+        changePercent,
+        recommendation,
+        reason,
+        market,
+        isFavorite
+      });
     }
   };
 
@@ -118,7 +134,7 @@ const StockCard: React.FC<StockCardProps> = ({
       </div>
 
       <button
-        onClick={() => onViewDetails?.(symbol)}
+        onClick={handleViewDetails}
         className="w-full bg-gradient-to-r from-purple-600 to-yellow-600 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-yellow-700 transition-all"
       >
         عرض التفاصيل
