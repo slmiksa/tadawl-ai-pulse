@@ -136,7 +136,7 @@ const Dashboard = () => {
       </div>
 
       {/* Market Selector */}
-      <MarketSelector selectedMarket={selectedMarket} onMarketChange={setSelectedMarket} />
+      <MarketSelector activeMarket={selectedMarket} onMarketChange={setSelectedMarket} />
 
       {/* Stocks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
