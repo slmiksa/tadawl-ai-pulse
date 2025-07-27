@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowLeft, Star, TrendingUp, TrendingDown, AlertCircle, BarChart3, Calendar, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -221,6 +220,13 @@ const StockDetails: React.FC<StockDetailsProps> = ({
                 />
                 <YAxis 
                   domain={['dataMin - 1', 'dataMax + 1']}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                />
+                <YAxis 
+                  yAxisId="volume"
+                  orientation="right"
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: '#9CA3AF', fontSize: 12 }}
