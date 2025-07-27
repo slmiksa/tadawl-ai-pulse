@@ -1,12 +1,41 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import Navbar from '../components/Navbar';
+import Dashboard from '../components/Dashboard';
+import Favorites from '../components/Favorites';
+import Performance from '../components/Performance';
+import TodayAnalysis from '../components/TodayAnalysis';
+import Notifications from '../components/Notifications';
+import Profile from '../components/Profile';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('home');
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return <Dashboard />;
+      case 'favorites':
+        return <Favorites />;
+      case 'performance':
+        return <Performance />;
+      case 'analysis':
+        return <TodayAnalysis />;
+      case 'notifications':
+        return <Notifications />;
+      case 'profile':
+        return <Profile />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gray-900">
+      <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderContent()}
+      </main>
     </div>
   );
 };
