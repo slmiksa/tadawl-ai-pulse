@@ -21,35 +21,38 @@ serve(async (req) => {
     const market = url.searchParams.get('market') || 'us';
     const dataType = url.searchParams.get('type') || 'quote';
     
-    console.log(`Fetching ${dataType} data for market: ${market}`);
+    console.log(`Processing request: type=${dataType}, market=${market}, symbol=${symbol}`);
 
     // For stocks list endpoint
     if (dataType === 'stocks') {
-      console.log('Fetching stocks list for market:', market);
-      
-      const usStocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN'];
-      const saudiStocks = ['2222.SR', '2010.SR', '1180.SR', '1120.SR', '2030.SR'];
-      
-      let stockSymbols = [];
-      if (market === 'us') {
-        stockSymbols = usStocks;
-      } else if (market === 'saudi') {
-        stockSymbols = saudiStocks;
-      } else {
-        stockSymbols = [...usStocks, ...saudiStocks];
-      }
+      console.log('Fetching stocks list...');
       
       const stocksData = [];
       
+      // Define stock symbols based on market
+      let stockSymbols = [];
+      if (market === 'us') {
+        stockSymbols = ['AAPL', 'TSLA', 'GOOGL', 'MSFT'];
+      } else if (market === 'saudi') {
+        stockSymbols = ['2222.SR', '1180.SR', '2010.SR'];
+      } else {
+        stockSymbols = ['AAPL', 'TSLA', '2222.SR', '1180.SR'];
+      }
+      
       for (const stockSymbol of stockSymbols) {
         try {
+          console.log(`Fetching data for ${stockSymbol}...`);
+          
           const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
-          console.log(`Fetching: ${quoteUrl}`);
-          
           const response = await fetch(quoteUrl);
-          const data = await response.json();
           
-          console.log(`Response for ${stockSymbol}:`, data);
+          if (!response.ok) {
+            console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
+            continue;
+          }
+          
+          const data = await response.json();
+          console.log(`API response for ${stockSymbol}:`, data);
           
           if (data && data.symbol && !data.status) {
             const change = parseFloat(data.change || '0');
@@ -74,19 +77,19 @@ serve(async (req) => {
                        'حركة جانبية للسهم، ننصح بالانتظار'
               });
             }
-          } else if (data.status === 'error') {
-            console.error(`API Error for ${stockSymbol}:`, data.message);
+          } else {
+            console.warn(`Invalid data for ${stockSymbol}:`, data);
           }
           
-          // Add delay to avoid rate limiting
-          await new Promise(resolve => setTimeout(resolve, 200));
+          // Rate limiting delay
+          await new Promise(resolve => setTimeout(resolve, 300));
           
         } catch (error) {
-          console.error(`Error fetching data for ${stockSymbol}:`, error);
+          console.error(`Error fetching ${stockSymbol}:`, error);
         }
       }
       
-      console.log('Final stocks data:', stocksData);
+      console.log(`Returning ${stocksData.length} stocks`);
       
       return new Response(
         JSON.stringify({ stocks: stocksData }),
@@ -97,7 +100,7 @@ serve(async (req) => {
       );
     }
     
-    // For individual stock data, symbol is required
+    // For individual stock data
     if (!symbol) {
       return new Response(
         JSON.stringify({ error: 'Symbol parameter is required for individual stock data' }),
@@ -241,7 +244,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: error.message || 'Failed to fetch stock data',
-        details: 'Check if the symbol is valid and try again'
+        details: 'Check if the API key is valid and symbol is correct'
       }),
       { 
         status: 500, 
