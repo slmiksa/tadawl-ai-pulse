@@ -14,7 +14,458 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      market_data: {
+        Row: {
+          close_price: number | null
+          created_at: string | null
+          date: string
+          high_price: number | null
+          id: string
+          low_price: number | null
+          open_price: number | null
+          stock_id: string
+          volume: number | null
+        }
+        Insert: {
+          close_price?: number | null
+          created_at?: string | null
+          date: string
+          high_price?: number | null
+          id?: string
+          low_price?: number | null
+          open_price?: number | null
+          stock_id: string
+          volume?: number | null
+        }
+        Update: {
+          close_price?: number | null
+          created_at?: string | null
+          date?: string
+          high_price?: number | null
+          id?: string
+          low_price?: number | null
+          open_price?: number | null
+          stock_id?: string
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_data_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolio_holdings: {
+        Row: {
+          average_cost: number
+          created_at: string | null
+          current_value: number | null
+          gain_loss: number | null
+          gain_loss_percent: number | null
+          id: string
+          portfolio_id: string
+          quantity: number
+          stock_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          average_cost: number
+          created_at?: string | null
+          current_value?: number | null
+          gain_loss?: number | null
+          gain_loss_percent?: number | null
+          id?: string
+          portfolio_id: string
+          quantity?: number
+          stock_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          average_cost?: number
+          created_at?: string | null
+          current_value?: number | null
+          gain_loss?: number | null
+          gain_loss_percent?: number | null
+          id?: string
+          portfolio_id?: string
+          quantity?: number
+          stock_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_holdings_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portfolio_holdings_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          total_gain_loss: number | null
+          total_gain_loss_percent: number | null
+          total_value: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          total_gain_loss?: number | null
+          total_gain_loss_percent?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          total_gain_loss?: number | null
+          total_gain_loss_percent?: number | null
+          total_value?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      stocks: {
+        Row: {
+          change_percent: number | null
+          created_at: string | null
+          dividend_yield: number | null
+          id: string
+          industry: string | null
+          last_updated: string | null
+          market: string
+          market_cap: number | null
+          name: string
+          pe_ratio: number | null
+          price: number | null
+          sector: string | null
+          symbol: string
+          volume: number | null
+        }
+        Insert: {
+          change_percent?: number | null
+          created_at?: string | null
+          dividend_yield?: number | null
+          id?: string
+          industry?: string | null
+          last_updated?: string | null
+          market: string
+          market_cap?: number | null
+          name: string
+          pe_ratio?: number | null
+          price?: number | null
+          sector?: string | null
+          symbol: string
+          volume?: number | null
+        }
+        Update: {
+          change_percent?: number | null
+          created_at?: string | null
+          dividend_yield?: number | null
+          id?: string
+          industry?: string | null
+          last_updated?: string | null
+          market?: string
+          market_cap?: number | null
+          name?: string
+          pe_ratio?: number | null
+          price?: number | null
+          sector?: string | null
+          symbol?: string
+          volume?: number | null
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          created_at: string | null
+          fees: number | null
+          id: string
+          notes: string | null
+          portfolio_id: string
+          price: number
+          quantity: number
+          stock_id: string
+          total_amount: number
+          transaction_date: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          fees?: number | null
+          id?: string
+          notes?: string | null
+          portfolio_id: string
+          price: number
+          quantity: number
+          stock_id: string
+          total_amount: number
+          transaction_date?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          fees?: number | null
+          id?: string
+          notes?: string | null
+          portfolio_id?: string
+          price?: number
+          quantity?: number
+          stock_id?: string
+          total_amount?: number
+          transaction_date?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          email_notifications: boolean | null
+          id: string
+          language: string | null
+          notifications_enabled: boolean | null
+          push_notifications: boolean | null
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          push_notifications?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          push_notifications?: boolean | null
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlist_stocks: {
+        Row: {
+          added_at: string | null
+          id: string
+          stock_id: string
+          watchlist_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          id?: string
+          stock_id: string
+          watchlist_id: string
+        }
+        Update: {
+          added_at?: string | null
+          id?: string
+          stock_id?: string
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_stocks_stock_id_fkey"
+            columns: ["stock_id"]
+            isOneToOne: false
+            referencedRelation: "stocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlist_stocks_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
