@@ -29,14 +29,14 @@ serve(async (req) => {
       
       const stocksData = [];
       
-      // Define stock symbols based on market
+      // Define stock symbols based on market (reduced for API limits)
       let stockSymbols = [];
       if (market === 'us') {
-        stockSymbols = ['AAPL', 'TSLA', 'GOOGL', 'MSFT'];
+        stockSymbols = ['AAPL', 'TSLA']; // Only 2 stocks for testing
       } else if (market === 'saudi') {
-        stockSymbols = ['2222.SR', '1180.SR', '2010.SR'];
+        stockSymbols = ['2222.SR']; // Only 1 stock for testing  
       } else {
-        stockSymbols = ['AAPL', 'TSLA', '2222.SR', '1180.SR'];
+        stockSymbols = ['AAPL', '2222.SR']; // One from each market
       }
       
       for (const stockSymbol of stockSymbols) {
