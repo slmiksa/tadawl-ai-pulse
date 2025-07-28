@@ -1,8 +1,9 @@
 
-import React from 'react';
-import { ArrowLeft, Star, TrendingUp, TrendingDown, AlertCircle, BarChart3, Calendar, Clock } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { ArrowLeft, Star, TrendingUp, TrendingDown, AlertCircle, BarChart3, Calendar, Clock, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
+import { useStockData } from '@/hooks/useStockData';
 
 interface StockDetailsProps {
   symbol: string;
@@ -31,108 +32,14 @@ const StockDetails: React.FC<StockDetailsProps> = ({
   onToggleFavorite,
   onBack
 }) => {
-  const isPositive = change >= 0;
+  const { quote, candlestickData, technicalIndicators, loading, error, refreshData } = useStockData(symbol, market);
+  
+  // Use real data if available, otherwise fallback to props
+  const currentPrice = quote?.price ?? price;
+  const currentChange = quote?.change ?? change;
+  const currentChangePercent = quote?.changePercent ?? changePercent;
+  const isPositive = currentChange >= 0;
   const marketLabel = market === 'us' ? 'السوق الأمريكي' : 'السوق السعودي';
-
-  // Mock candlestick data
-  const candlestickData = [
-    {
-      time: '9:30',
-      open: 142.5,
-      high: 145.2,
-      low: 141.8,
-      close: 144.1,
-      volume: 1200000
-    },
-    {
-      time: '10:00',
-      open: 144.1,
-      high: 146.5,
-      low: 143.2,
-      close: 145.8,
-      volume: 980000
-    },
-    {
-      time: '10:30',
-      open: 145.8,
-      high: 147.1,
-      low: 144.9,
-      close: 146.3,
-      volume: 1100000
-    },
-    {
-      time: '11:00',
-      open: 146.3,
-      high: 148.0,
-      low: 145.5,
-      close: 147.2,
-      volume: 1350000
-    },
-    {
-      time: '11:30',
-      open: 147.2,
-      high: 148.8,
-      low: 146.1,
-      close: 147.9,
-      volume: 1050000
-    },
-    {
-      time: '12:00',
-      open: 147.9,
-      high: 149.2,
-      low: 147.0,
-      close: 148.5,
-      volume: 1250000
-    },
-    {
-      time: '12:30',
-      open: 148.5,
-      high: 149.8,
-      low: 147.8,
-      close: 148.2,
-      volume: 900000
-    },
-    {
-      time: '13:00',
-      open: 148.2,
-      high: 149.5,
-      low: 147.5,
-      close: 148.8,
-      volume: 1150000
-    },
-    {
-      time: '13:30',
-      open: 148.8,
-      high: 150.1,
-      low: 148.0,
-      close: 149.3,
-      volume: 1300000
-    },
-    {
-      time: '14:00',
-      open: 149.3,
-      high: 150.5,
-      low: 148.7,
-      close: 149.8,
-      volume: 1180000
-    },
-    {
-      time: '14:30',
-      open: 149.8,
-      high: 151.2,
-      low: 149.0,
-      close: 150.4,
-      volume: 1400000
-    },
-    {
-      time: '15:00',
-      open: 150.4,
-      high: 151.8,
-      low: 149.8,
-      close: 150.9,
-      volume: 1220000
-    }
-  ];
 
   const getRecommendationColor = (rec: string) => {
     switch (rec) {
@@ -160,7 +67,8 @@ const StockDetails: React.FC<StockDetailsProps> = ({
     }
   };
 
-  const mockTechnicalData = [
+  // Use real technical data if available, otherwise fallback to mock data
+  const displayTechnicalData = technicalIndicators.length > 0 ? technicalIndicators : [
     {
       indicator: 'RSI',
       value: '65.4',
@@ -178,12 +86,12 @@ const StockDetails: React.FC<StockDetailsProps> = ({
     },
     {
       indicator: 'مستوى الدعم',
-      value: '$142.50',
+      value: `$${(currentPrice * 0.95).toFixed(2)}`,
       status: 'قوي'
     },
     {
       indicator: 'مستوى المقاومة',
-      value: '$148.20',
+      value: `$${(currentPrice * 1.05).toFixed(2)}`,
       status: 'متوسط'
     }
   ];
@@ -271,21 +179,33 @@ const StockDetails: React.FC<StockDetailsProps> = ({
                 <span className="text-xs sm:text-sm px-2 py-1 bg-gray-700 text-gray-300 rounded">
                   {marketLabel}
                 </span>
+                {loading && <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />}
               </div>
-              <p className="text-sm sm:text-base text-gray-400">{name}</p>
+              <p className="text-sm sm:text-base text-gray-400">{quote?.name || name}</p>
+              {error && <p className="text-xs text-red-400 mt-1">خطأ في جلب البيانات: {error}</p>}
             </div>
           </div>
-          <button
-            onClick={() => onToggleFavorite?.(symbol)}
-            className={cn(
-              "p-2 sm:p-3 rounded-lg transition-colors",
-              isFavorite
-                ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
-                : "bg-gray-700 text-gray-400 hover:bg-gray-600"
-            )}
-          >
-            <Star className={cn("w-5 h-5 sm:w-6 sm:h-6", isFavorite && "fill-current")} />
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={refreshData}
+              disabled={loading}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+              title="تحديث البيانات"
+            >
+              <RefreshCw className={cn("w-5 h-5", loading && "animate-spin")} />
+            </button>
+            <button
+              onClick={() => onToggleFavorite?.(symbol)}
+              className={cn(
+                "p-2 sm:p-3 rounded-lg transition-colors",
+                isFavorite
+                  ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
+                  : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+              )}
+            >
+              <Star className={cn("w-5 h-5 sm:w-6 sm:h-6", isFavorite && "fill-current")} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -297,19 +217,19 @@ const StockDetails: React.FC<StockDetailsProps> = ({
             {/* Price Section */}
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-                <span className="text-3xl sm:text-4xl font-bold text-white">${price.toFixed(2)}</span>
+                <span className="text-3xl sm:text-4xl font-bold text-white">${currentPrice.toFixed(2)}</span>
                 <div className={cn(
                   "flex items-center space-x-2 px-3 py-1 rounded-lg w-fit",
                   isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
                 )}>
                   {isPositive ? <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" /> : <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
                   <span className="text-sm sm:text-lg font-medium">
-                    {isPositive ? '+' : ''}{change.toFixed(2)} ({changePercent.toFixed(2)}%)
+                    {isPositive ? '+' : ''}{currentChange.toFixed(2)} ({currentChangePercent.toFixed(2)}%)
                   </span>
                 </div>
               </div>
               <div className="text-xs sm:text-sm text-gray-400">
-                آخر تحديث: {new Date().toLocaleTimeString('ar-SA')}
+                آخر تحديث: {quote?.timestamp ? new Date(quote.timestamp).toLocaleString('ar-SA') : new Date().toLocaleTimeString('ar-SA')}
               </div>
             </div>
             
@@ -327,15 +247,17 @@ const StockDetails: React.FC<StockDetailsProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-gray-700">
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">الأعلى اليوم</p>
-              <p className="text-sm sm:text-lg font-semibold text-green-400">${(price * 1.02).toFixed(2)}</p>
+              <p className="text-sm sm:text-lg font-semibold text-green-400">${quote?.high?.toFixed(2) || (currentPrice * 1.02).toFixed(2)}</p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">الأدنى اليوم</p>
-              <p className="text-sm sm:text-lg font-semibold text-red-400">${(price * 0.98).toFixed(2)}</p>
+              <p className="text-sm sm:text-lg font-semibold text-red-400">${quote?.low?.toFixed(2) || (currentPrice * 0.98).toFixed(2)}</p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">حجم التداول</p>
-              <p className="text-sm sm:text-lg font-semibold text-blue-400">1.2M</p>
+              <p className="text-sm sm:text-lg font-semibold text-blue-400">
+                {quote?.volume ? quote.volume > 1000000 ? `${(quote.volume / 1000000).toFixed(1)}M` : `${(quote.volume / 1000).toFixed(0)}K` : '1.2M'}
+              </p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">القيمة السوقية</p>
@@ -348,14 +270,23 @@ const StockDetails: React.FC<StockDetailsProps> = ({
         <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
           <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center">
             <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 mr-3" />
-            الشموع اليابانية
+            الشموع اليابانية {candlestickData.length > 0 && <span className="text-green-400 text-sm mr-2">(بيانات حقيقية)</span>}
           </h2>
-          <div className="h-64 sm:h-96">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={candlestickData}
-                margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
-              >
+          {candlestickData.length === 0 && !loading && (
+            <div className="text-center py-8 text-gray-400">
+              <p>لا توجد بيانات متاحة للرسم البياني</p>
+              <button onClick={refreshData} className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                إعادة المحاولة
+              </button>
+            </div>
+          )}
+          {(candlestickData.length > 0 || loading) && (
+            <div className="h-64 sm:h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={candlestickData}
+                  margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
+                >
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                 <XAxis 
                   dataKey="time"
@@ -402,7 +333,8 @@ const StockDetails: React.FC<StockDetailsProps> = ({
                 ))}
               </ComposedChart>
             </ResponsiveContainer>
-          </div>
+            </div>
+          )}
           
           {/* Chart Analysis - Mobile Optimized */}
           <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-700 rounded-lg">
@@ -433,9 +365,11 @@ const StockDetails: React.FC<StockDetailsProps> = ({
 
         {/* Technical Indicators - Mobile Optimized */}
         <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold mb-4">المؤشرات الفنية</h2>
+          <h2 className="text-lg sm:text-xl font-bold mb-4">
+            المؤشرات الفنية {technicalIndicators.length > 0 && <span className="text-green-400 text-sm">(بيانات حقيقية)</span>}
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-            {mockTechnicalData.map((item, index) => (
+            {displayTechnicalData.map((item, index) => (
               <div key={index} className="bg-gray-700 rounded-lg p-3 sm:p-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-xs sm:text-sm text-gray-400">{item.indicator}</span>
