@@ -27,106 +27,74 @@ serve(async (req) => {
     if (dataType === 'stocks') {
       console.log('Fetching stocks list for market:', market);
       
-      try {
-        const usStocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN'];
-        const saudiStocks = ['2222.SR', '2010.SR', '1180.SR', '1120.SR'];
-        
-        const stockSymbols = market === 'us' ? usStocks : 
-                           market === 'saudi' ? saudiStocks : 
-                           [...usStocks, ...saudiStocks];
-        
-        const stocksData = [];
-        
-        // Fetch first 3 stocks to avoid API rate limits
-        const limitedStocks = stockSymbols.slice(0, 3);
-        
-        for (const stockSymbol of limitedStocks) {
-          try {
-            const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
-            const response = await fetch(quoteUrl);
-            const data = await response.json();
+      const usStocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN'];
+      const saudiStocks = ['2222.SR', '2010.SR', '1180.SR', '1120.SR', '2030.SR'];
+      
+      let stockSymbols = [];
+      if (market === 'us') {
+        stockSymbols = usStocks;
+      } else if (market === 'saudi') {
+        stockSymbols = saudiStocks;
+      } else {
+        stockSymbols = [...usStocks, ...saudiStocks];
+      }
+      
+      const stocksData = [];
+      
+      for (const stockSymbol of stockSymbols) {
+        try {
+          const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
+          console.log(`Fetching: ${quoteUrl}`);
+          
+          const response = await fetch(quoteUrl);
+          const data = await response.json();
+          
+          console.log(`Response for ${stockSymbol}:`, data);
+          
+          if (data && data.symbol && !data.status) {
+            const change = parseFloat(data.change || '0');
+            const price = parseFloat(data.close || data.price || '0');
             
-            console.log(`Data for ${stockSymbol}:`, data);
-            
-            if (data && !data.status && data.symbol) {
-              const change = parseFloat(data.change || '0');
+            if (price > 0) {
               stocksData.push({
                 symbol: data.symbol,
                 name: data.name || stockSymbol,
-                price: parseFloat(data.close || data.price || '150'),
+                price: price,
                 change: change,
                 changePercent: parseFloat(data.percent_change || '0'),
-                volume: parseInt(data.volume || '1000000'),
-                high: parseFloat(data.high || '155'),
-                low: parseFloat(data.low || '145'),
-                open: parseFloat(data.open || '150'),
+                volume: parseInt(data.volume || '0'),
+                high: parseFloat(data.high || price.toString()),
+                low: parseFloat(data.low || price.toString()),
+                open: parseFloat(data.open || price.toString()),
                 timestamp: data.datetime || new Date().toISOString(),
                 market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
-                recommendation: change > 0 ? 'buy' : change < -1 ? 'sell' : 'hold',
-                reason: change > 0 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
                        change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
                        'حركة جانبية للسهم، ننصح بالانتظار'
               });
             }
-          } catch (error) {
-            console.error(`Error fetching data for ${stockSymbol}:`, error);
+          } else if (data.status === 'error') {
+            console.error(`API Error for ${stockSymbol}:`, data.message);
           }
+          
+          // Add delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+        } catch (error) {
+          console.error(`Error fetching data for ${stockSymbol}:`, error);
         }
-        
-        // Add fallback data if API fails
-        if (stocksData.length === 0) {
-          console.log('Using fallback data...');
-          stocksData.push(
-            {
-              symbol: 'AAPL',
-              name: 'Apple Inc.',
-              price: 150.25,
-              change: 2.15,
-              changePercent: 1.45,
-              volume: 45000000,
-              high: 152.00,
-              low: 148.50,
-              open: 149.00,
-              timestamp: new Date().toISOString(),
-              market: 'us',
-              recommendation: 'buy',
-              reason: 'اتجاه صاعد إيجابي مع زيادة في الأسعار'
-            },
-            {
-              symbol: '2222.SR',
-              name: 'Saudi Aramco',
-              price: 28.50,
-              change: -0.25,
-              changePercent: -0.87,
-              volume: 12000000,
-              high: 29.00,
-              low: 28.25,
-              open: 28.75,
-              timestamp: new Date().toISOString(),
-              market: 'saudi',
-              recommendation: 'hold',
-              reason: 'حركة جانبية للسهم، ننصح بالانتظار'
-            }
-          );
-        }
-        
-        return new Response(
-          JSON.stringify({ stocks: stocksData }),
-          { 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200
-          }
-        );
-      } catch (error) {
-        console.error('Error in stocks endpoint:', error);
-        return new Response(
-          JSON.stringify({ error: 'Failed to fetch stocks data' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        );
       }
+      
+      console.log('Final stocks data:', stocksData);
+      
+      return new Response(
+        JSON.stringify({ stocks: stocksData }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
     }
     
     // For individual stock data, symbol is required
