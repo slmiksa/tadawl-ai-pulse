@@ -21,6 +21,52 @@ serve(async (req) => {
     const market = url.searchParams.get('market') || 'us';
     const dataType = url.searchParams.get('type') || 'quote';
     
+    // For stocks list endpoint
+    if (dataType === 'stocks') {
+      const usStocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'AMD'];
+      const saudiStocks = ['2222.SR', '2010.SR', '1180.SR', '1120.SR', '2030.SR', '2380.SR', '7040.SR', '4030.SR'];
+      
+      const stockSymbols = market === 'us' ? usStocks : market === 'saudi' ? saudiStocks : [...usStocks, ...saudiStocks];
+      
+      const stocksData = [];
+      
+      for (const stockSymbol of stockSymbols) {
+        try {
+          const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
+          const response = await fetch(quoteUrl);
+          const data = await response.json();
+          
+          if (data.status !== 'error' && data.symbol) {
+            const change = parseFloat(data.change || '0');
+            stocksData.push({
+              symbol: data.symbol,
+              name: data.name,
+              price: parseFloat(data.close || data.price || '0'),
+              change: change,
+              changePercent: parseFloat(data.percent_change || '0'),
+              volume: parseInt(data.volume || '0'),
+              high: parseFloat(data.high || '0'),
+              low: parseFloat(data.low || '0'),
+              open: parseFloat(data.open || '0'),
+              timestamp: data.datetime,
+              market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
+              recommendation: change > 0 ? 'buy' : change < -1 ? 'sell' : 'hold',
+              reason: change > 0 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                     change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                     'حركة جانبية للسهم، ننصح بالانتظار'
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching data for ${stockSymbol}:`, error);
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ stocks: stocksData }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     if (!symbol) {
       return new Response(
         JSON.stringify({ error: 'Symbol parameter is required' }),
