@@ -21,6 +21,8 @@ serve(async (req) => {
     const market = url.searchParams.get('market') || 'us';
     const dataType = url.searchParams.get('type') || 'quote';
     
+    console.log(`Fetching ${dataType} data for market: ${market}`);
+
     // For stocks list endpoint
     if (dataType === 'stocks') {
       const usStocks = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NVDA', 'AMD'];
@@ -67,9 +69,10 @@ serve(async (req) => {
       );
     }
     
+    // For individual stock data, symbol is required
     if (!symbol) {
       return new Response(
-        JSON.stringify({ error: 'Symbol parameter is required' }),
+        JSON.stringify({ error: 'Symbol parameter is required for individual stock data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
