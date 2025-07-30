@@ -53,41 +53,25 @@ serve(async (req) => {
       
       const stocksData = [];
       
-      // Define comprehensive stock symbols based on market
+      // Use cached data or limited symbols for better performance
       let stockSymbols = [];
       if (market === 'us') {
-        // Top 100 US stocks - most liquid and popular
+        // Top 15 US stocks only for better performance
         stockSymbols = [
           'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC', 
-          'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU',
-          'SQ', 'TWTR', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN',
-          'IBM', 'HPQ', 'DELL', 'VMW', 'NOW', 'WDAY', 'SPLK', 'DDOG', 'CRWD', 'ZS',
-          'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
-          'JNJ', 'PFE', 'UNH', 'ABT', 'MRK', 'ABBV', 'CVS', 'LLY', 'TMO', 'DHR',
-          'KO', 'PEP', 'WMT', 'HD', 'MCD', 'DIS', 'NKE', 'SBUX', 'LOW', 'TGT',
-          'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX', 'HES',
-          'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX',
-          'GILD', 'BIIB', 'AMGN', 'REGN', 'VRTX', 'CELG', 'ILMN', 'BMRN', 'ALXN', 'INCY'
+          'JPM', 'BAC', 'JNJ', 'PFE', 'KO'
         ];
       } else if (market === 'saudi') {
-        // Major Saudi stocks from Tadawul
+        // Top 15 Saudi stocks only for better performance
         stockSymbols = [
           '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-          '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR',
-          '1830.SR', '2040.SR', '4003.SR', '2001.SR', '1140.SR', '2230.SR', '4004.SR', '2110.SR',
-          '2260.SR', '2350.SR', '1201.SR', '2290.SR', '4005.SR', '2310.SR', '1301.SR', '2320.SR',
-          '4006.SR', '2330.SR', '1302.SR', '2340.SR', '4007.SR', '2360.SR', '1303.SR', '2370.SR',
-          '4008.SR', '2390.SR', '1304.SR', '2400.SR', '4009.SR', '2410.SR', '1305.SR', '2420.SR',
-          '4010.SR', '2430.SR', '1306.SR', '2440.SR', '4011.SR', '2450.SR', '1307.SR', '2460.SR',
-          '4012.SR', '2470.SR', '1308.SR', '2480.SR', '4013.SR', '2490.SR', '1309.SR', '2500.SR'
+          '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR'
         ];
       } else {
-        // Mixed markets - top stocks from both
+        // Mixed markets - limited selection for better performance
         stockSymbols = [
-          'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-          '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-          'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX',
-          '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+          'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX',
+          '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR'
         ];
       }
       
