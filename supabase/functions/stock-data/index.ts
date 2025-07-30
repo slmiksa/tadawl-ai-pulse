@@ -17,9 +17,21 @@ serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const symbol = url.searchParams.get('symbol');
-    const market = url.searchParams.get('market') || 'us';
-    const dataType = url.searchParams.get('type') || 'quote';
+    
+    // Handle different request methods and body parsing
+    let symbol, market, dataType;
+    
+    if (req.method === 'POST') {
+      const body = await req.text();
+      const params = new URLSearchParams(body);
+      symbol = params.get('symbol');
+      market = params.get('market') || 'us';
+      dataType = params.get('type') || 'quote';
+    } else {
+      symbol = url.searchParams.get('symbol');
+      market = url.searchParams.get('market') || 'us';
+      dataType = url.searchParams.get('type') || 'quote';
+    }
     
     console.log(`Processing request: type=${dataType}, market=${market}, symbol=${symbol}`);
 
