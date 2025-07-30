@@ -23,10 +23,12 @@ serve(async (req) => {
     
     if (req.method === 'POST') {
       const body = await req.text();
+      console.log('Request body:', body);
       const params = new URLSearchParams(body);
       symbol = params.get('symbol');
       market = params.get('market') || 'us';
       dataType = params.get('type') || 'quote';
+      console.log('Parsed params:', { symbol, market, dataType });
     } else {
       symbol = url.searchParams.get('symbol');
       market = url.searchParams.get('market') || 'us';
