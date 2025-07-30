@@ -28,12 +28,9 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
 
     try {
       const { data, error } = await supabase.functions.invoke('stock-data', {
-        body: new URLSearchParams({
+        body: {
           type: 'stocks',
           market: market === 'all' ? 'all' : market
-        }).toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
 
