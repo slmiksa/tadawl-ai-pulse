@@ -42,14 +42,14 @@ serve(async (req) => {
       
       const stocksData = [];
       
-      // Define stock symbols based on market (reduced for API limits)
+      // Define stock symbols based on market
       let stockSymbols = [];
       if (market === 'us') {
-        stockSymbols = ['AAPL', 'TSLA', 'GOOGL', 'MSFT']; // More diverse stocks
+        stockSymbols = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', 'META', 'NFLX', 'NVDA', 'AMD', 'INTC', 'CRM', 'ORCL']; // Major US stocks
       } else if (market === 'saudi') {
-        stockSymbols = ['2222.SR', '2010.SR']; // Saudi stocks
+        stockSymbols = ['2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR']; // Major Saudi stocks
       } else {
-        stockSymbols = ['AAPL', 'TSLA', '2222.SR']; // Mixed markets
+        stockSymbols = ['AAPL', 'TSLA', 'GOOGL', 'MSFT', 'AMZN', '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR']; // Mixed markets
       }
       
       for (const stockSymbol of stockSymbols) {
