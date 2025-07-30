@@ -114,8 +114,8 @@ serve(async (req) => {
       );
     }
     
-    // For individual stock data
-    if (!symbol) {
+    // For individual stock data (not stocks list)
+    if (dataType !== 'stocks' && !symbol) {
       return new Response(
         JSON.stringify({ error: 'Symbol parameter is required for individual stock data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
