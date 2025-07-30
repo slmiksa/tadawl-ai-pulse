@@ -22,12 +22,23 @@ serve(async (req) => {
     let symbol, market, dataType;
     
     if (req.method === 'POST') {
-      const body = await req.json();
-      console.log('Request body:', body);
-      symbol = body.symbol;
-      market = body.market || 'us';
-      dataType = body.type || 'quote';
-      console.log('Parsed params:', { symbol, market, dataType });
+      const contentType = req.headers.get('content-type') || '';
+      
+      if (contentType.includes('application/json')) {
+        const body = await req.json();
+        console.log('JSON Request body:', body);
+        symbol = body.symbol;
+        market = body.market || 'us';
+        dataType = body.type || 'quote';
+      } else {
+        // Handle form-encoded data
+        const body = await req.text();
+        const params = new URLSearchParams(body);
+        symbol = params.get('symbol');
+        market = params.get('market') || 'us';
+        dataType = params.get('type') || 'quote';
+        console.log('Form Request params:', { symbol, market, dataType });
+      }
     } else {
       symbol = url.searchParams.get('symbol');
       market = url.searchParams.get('market') || 'us';
