@@ -166,12 +166,11 @@ serve(async (req) => {
         ];
       }
       
-      // Try to fetch from API, but fallback to comprehensive mock data
+      // Fetch from API only - no fallback data
       const stocksData = [];
       let apiCallsCount = 0;
-      const maxApiCalls = 10; // Limit API calls to avoid rate limiting
       
-      for (const stockSymbol of stockSymbols.slice(0, maxApiCalls)) {
+      for (const stockSymbol of stockSymbols) {
         try {
           console.log(`Fetching data for ${stockSymbol}...`);
           apiCallsCount++;
@@ -181,7 +180,7 @@ serve(async (req) => {
           
           if (!response.ok) {
             console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
-            break; // Stop making API calls if we hit rate limit
+            continue; // Continue with next stock instead of breaking
           }
           
           const data = await response.json();
@@ -210,22 +209,18 @@ serve(async (req) => {
               });
             }
           } else if (data.status === 'error') {
-            console.log(`API rate limit hit: ${data.message}`);
-            break; // Stop making more API calls
+            console.log(`API error for ${stockSymbol}: ${data.message}`);
+            continue; // Continue with next stock
           }
           
           // Small delay to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 150));
+          await new Promise(resolve => setTimeout(resolve, 200));
           
         } catch (error) {
           console.error(`Error fetching ${stockSymbol}:`, error);
-          break; // Stop on any error
+          continue; // Continue with next stock
         }
       }
-      
-      // Add comprehensive fallback data for remaining stocks
-      const fallbackData = generateFallbackStocks(stockSymbols, market, stocksData);
-      stocksData.push(...fallbackData);
       
       // Cache the data
       stockCache.set(cacheKey, {
@@ -233,7 +228,7 @@ serve(async (req) => {
         timestamp: Date.now()
       });
       
-      console.log(`Returning ${stocksData.length} stocks (${apiCallsCount} from API, ${fallbackData.length} fallback)`);
+      console.log(`Returning ${stocksData.length} stocks from API only`);
       
       return new Response(
         JSON.stringify({ stocks: stocksData }),
