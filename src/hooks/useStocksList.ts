@@ -1,5 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+
+// Global cache for stocks data to persist across market changes
+const stocksCache = new Map<string, {
+  data: Stock[];
+  timestamp: number;
+  lastDbCheck: number;
+}>();
+
+const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
 
 interface Stock {
   symbol: string;
@@ -22,14 +31,43 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStocks = async (showLoader = true) => {
-    if (showLoader) {
+  const fetchStocks = async (forceRefresh = false) => {
+    const cacheKey = market;
+    const now = Date.now();
+    
+    // Check if we have valid cached data first
+    const cachedData = stocksCache.get(cacheKey);
+    if (cachedData && !forceRefresh) {
+      const timeSinceCache = now - cachedData.timestamp;
+      const timeSinceDbCheck = now - cachedData.lastDbCheck;
+      
+      // If cache is less than 3 minutes old, use it immediately
+      if (timeSinceCache < CACHE_DURATION) {
+        console.log(`Using memory cache for ${cacheKey} (${Math.round(timeSinceCache / 1000)}s old)`);
+        setStocks(cachedData.data);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+      
+      // If database was checked recently (less than 30 seconds), don't check again
+      if (timeSinceDbCheck < 30000) {
+        console.log(`Database recently checked for ${cacheKey}, using existing cache`);
+        setStocks(cachedData.data);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+    }
+
+    // If no valid cache, show loader only if we don't have any data to show
+    if (!cachedData) {
       setLoading(true);
     }
     setError(null);
 
     try {
-      // First try to get fresh data from database
+      // Check database for fresh data
       let query = supabase.from('stocks').select('*');
       
       if (market !== 'all') {
@@ -38,9 +76,7 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
       
       const { data: stocksData, error: dbError } = await query.order('symbol');
       
-      // If we have any data in database, use it immediately (for instant display)
       if (stocksData && stocksData.length > 0 && !dbError) {
-        console.log('Using cached data from database');
         const transformedStocks = stocksData.map(stock => ({
           symbol: stock.symbol,
           name: stock.name,
@@ -56,41 +92,62 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
           recommendation: (stock.recommendation === 'buy' || stock.recommendation === 'sell' || stock.recommendation === 'hold') ? stock.recommendation : 'hold' as 'buy' | 'sell' | 'hold',
           reason: stock.reason || 'لا توجد توصية متاحة'
         }));
+
+        // Check if database data is fresh (less than 3 minutes old)
+        const newestStock = stocksData.reduce((newest, stock) => {
+          const stockTime = new Date(stock.last_updated || 0).getTime();
+          const newestTime = new Date(newest.last_updated || 0).getTime();
+          return stockTime > newestTime ? stock : newest;
+        }, stocksData[0]);
+        
+        const dataAge = now - new Date(newestStock.last_updated || 0).getTime();
+        const isFreshData = dataAge < CACHE_DURATION;
+        
+        // Update cache with fresh timestamp only if data is actually fresh
+        const cacheTimestamp = isFreshData ? now : (cachedData?.timestamp || now - CACHE_DURATION + 30000);
+        
+        stocksCache.set(cacheKey, {
+          data: transformedStocks,
+          timestamp: cacheTimestamp,
+          lastDbCheck: now
+        });
         
         setStocks(transformedStocks);
-
-        // Check if data is older than 5 minutes - if so, refresh in background
-        const now = new Date();
-        const hasRecentData = stocksData.some(stock => {
-          const lastUpdate = new Date(stock.last_updated || 0);
-          const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-          return diffMinutes < 5;
-        });
-
-        // If data is stale, refresh in background without showing loader
-        if (!hasRecentData) {
-          console.log('Data is stale, refreshing in background...');
+        console.log(`Updated cache for ${cacheKey} with ${transformedStocks.length} stocks (data age: ${Math.round(dataAge / 1000)}s)`);
+        
+        // If database data is stale (older than 3 minutes), trigger background refresh
+        if (!isFreshData && !forceRefresh) {
+          console.log('Database data is stale, triggering background refresh...');
           setTimeout(() => fetchFromAPI(false), 100);
         }
       } else {
-        // No database data, fetch from API with loader
-        await fetchFromAPI(true);
+        // No database data, fetch from API
+        console.log('No database data found, fetching from API...');
+        await fetchFromAPI(!cachedData); // Show loader only if no cached data
       }
     } catch (err) {
       console.error('Error fetching stocks:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch stocks data';
-      setError(`خطأ في جلب البيانات: ${errorMessage}`);
-      setStocks([]);
-    } finally {
-      if (showLoader) {
-        setLoading(false);
+      
+      // If we have cached data, use it even if database check failed
+      if (cachedData) {
+        console.log('Database error, falling back to cached data');
+        setStocks(cachedData.data);
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch stocks data';
+        setError(`خطأ في جلب البيانات: ${errorMessage}`);
+        setStocks([]);
       }
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchFromAPI = async (showLoader = true) => {
     try {
-      console.log('Fetching fresh data from API');
+      if (showLoader) {
+        console.log('Fetching fresh data from API...');
+      }
+      
       const { data, error } = await supabase.functions.invoke('stock-data', {
         body: {
           type: 'stocks',
@@ -107,10 +164,18 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
       }
 
       if (data?.stocks && Array.isArray(data.stocks)) {
+        // Update cache with fresh API data
+        stocksCache.set(market, {
+          data: data.stocks,
+          timestamp: Date.now(),
+          lastDbCheck: Date.now()
+        });
+        
         setStocks(data.stocks);
+        console.log(`Updated cache for ${market} with fresh API data (${data.stocks.length} stocks)`);
+        
         if (data.stocks.length === 0 && showLoader) {
-          // Try to initialize stocks if empty
-          console.log('Initializing stock data...');
+          console.log('No stocks returned, initializing...');
           await supabase.functions.invoke('init-stocks');
           setError('يتم تحميل البيانات للمرة الأولى، يرجى الانتظار...');
         }
@@ -142,7 +207,7 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
   }, [market]);
 
   const refreshStocks = () => {
-    fetchStocks();
+    fetchStocks(true); // Force refresh from API
   };
 
   return {
