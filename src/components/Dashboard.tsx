@@ -1,45 +1,31 @@
-
 import React, { useState } from 'react';
 import StockCard from './StockCard';
 import StockDetails from './StockDetails';
 import MarketSelector from './MarketSelector';
 import { useStocksList } from '@/hooks/useStocksList';
 import { TrendingUp, TrendingDown, DollarSign, Clock, RefreshCw } from 'lucide-react';
-
 const Dashboard = () => {
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'us' | 'saudi'>('all');
   const [favorites, setFavorites] = useState<string[]>(['AAPL', '2222.SR']);
   const [selectedStock, setSelectedStock] = useState<any>(null);
-  
-  const { stocks, loading, error, refreshStocks } = useStocksList(selectedMarket);
-
+  const {
+    stocks,
+    loading,
+    error,
+    refreshStocks
+  } = useStocksList(selectedMarket);
   const filteredStocks = stocks;
-
   const handleToggleFavorite = (symbol: string) => {
-    setFavorites(prev => 
-      prev.includes(symbol) 
-        ? prev.filter(fav => fav !== symbol)
-        : [...prev, symbol]
-    );
+    setFavorites(prev => prev.includes(symbol) ? prev.filter(fav => fav !== symbol) : [...prev, symbol]);
   };
-
   const handleViewDetails = (stockData: any) => {
     setSelectedStock(stockData);
   };
-
   const handleBackToDashboard = () => {
     setSelectedStock(null);
   };
-
   if (selectedStock) {
-    return (
-      <StockDetails
-        {...selectedStock}
-        isFavorite={favorites.includes(selectedStock.symbol)}
-        onToggleFavorite={handleToggleFavorite}
-        onBack={handleBackToDashboard}
-      />
-    );
+    return <StockDetails {...selectedStock} isFavorite={favorites.includes(selectedStock.symbol)} onToggleFavorite={handleToggleFavorite} onBack={handleBackToDashboard} />;
   }
 
   // Calculate statistics
@@ -47,32 +33,22 @@ const Dashboard = () => {
   const positiveStocks = filteredStocks.filter(stock => stock.change > 0).length;
   const negativeStocks = filteredStocks.filter(stock => stock.change < 0).length;
   const buyRecommendations = filteredStocks.filter(stock => stock.recommendation === 'buy').length;
-
   if (loading && stocks.length === 0) {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <div className="text-center py-12">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-400" />
           <p className="text-gray-400">جارٍ تحميل بيانات الأسهم...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Error Display */}
-      {error && (
-        <div className="bg-red-900/50 border border-red-700 rounded-lg p-4">
+      {error && <div className="bg-red-900/50 border border-red-700 rounded-lg p-4">
           <p className="text-red-200">خطأ في جلب البيانات: {error}</p>
-          <button
-            onClick={refreshStocks}
-            className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm"
-          >
+          <button onClick={refreshStocks} className="mt-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
             إعادة المحاولة
           </button>
-        </div>
-      )}
+        </div>}
       
       {/* Market Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -120,43 +96,18 @@ const Dashboard = () => {
       {/* Market Selector */}
       <div className="flex items-center justify-between">
         <MarketSelector activeMarket={selectedMarket} onMarketChange={setSelectedMarket} />
-        <button
-          onClick={refreshStocks}
-          disabled={loading}
-          className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg text-sm"
-          title="تحديث البيانات"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>تحديث</span>
-        </button>
+        
       </div>
 
       {/* Stocks Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStocks.length === 0 && !loading ? (
-          <div className="col-span-full text-center py-12">
+        {filteredStocks.length === 0 && !loading ? <div className="col-span-full text-center py-12">
             <p className="text-gray-400 mb-4">لا توجد أسهم متاحة</p>
-            <button
-              onClick={refreshStocks}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"
-            >
+            <button onClick={refreshStocks} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
               إعادة المحاولة
             </button>
-          </div>
-        ) : (
-          filteredStocks.map((stock) => (
-            <StockCard
-              key={stock.symbol}
-              {...stock}
-              isFavorite={favorites.includes(stock.symbol)}
-              onToggleFavorite={handleToggleFavorite}
-              onViewDetails={handleViewDetails}
-            />
-          ))
-        )}
+          </div> : filteredStocks.map(stock => <StockCard key={stock.symbol} {...stock} isFavorite={favorites.includes(stock.symbol)} onToggleFavorite={handleToggleFavorite} onViewDetails={handleViewDetails} />)}
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
