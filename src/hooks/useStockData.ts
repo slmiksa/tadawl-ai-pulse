@@ -43,21 +43,41 @@ export const useStockData = (symbol: string, market: 'us' | 'saudi' = 'us') => {
     setError(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('stock-data', {
-        body: new URLSearchParams({
-          symbol,
-          market,
-          type: 'quote'
-        }).toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      });
+      // First try to get data from database
+      const { data: stockData, error: dbError } = await supabase
+        .from('stocks')
+        .select('*')
+        .eq('symbol', symbol)
+        .maybeSingle();
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (stockData && !dbError) {
+        setQuote({
+          symbol: stockData.symbol,
+          name: stockData.name,
+          price: Number(stockData.price || 0),
+          change: Number(stockData.change || 0),
+          changePercent: Number(stockData.change_percent || 0),
+          volume: Number(stockData.volume || 0),
+          high: Number(stockData.high || stockData.price || 0),
+          low: Number(stockData.low || stockData.price || 0),
+          open: Number(stockData.open || stockData.price || 0),
+          timestamp: stockData.last_updated || new Date().toISOString()
+        });
+      } else {
+        // Fallback to API if no database data
+        const { data, error } = await supabase.functions.invoke('stock-data', {
+          body: {
+            symbol,
+            market,
+            type: 'quote'
+          }
+        });
 
-      setQuote(data);
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        setQuote(data);
+      }
     } catch (err) {
       console.error('Error fetching stock quote:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch stock data');
@@ -71,13 +91,10 @@ export const useStockData = (symbol: string, market: 'us' | 'saudi' = 'us') => {
 
     try {
       const { data, error } = await supabase.functions.invoke('stock-data', {
-        body: new URLSearchParams({
+        body: {
           symbol,
           market,
           type: 'timeseries'
-        }).toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
 
@@ -95,13 +112,10 @@ export const useStockData = (symbol: string, market: 'us' | 'saudi' = 'us') => {
 
     try {
       const { data, error } = await supabase.functions.invoke('stock-data', {
-        body: new URLSearchParams({
+        body: {
           symbol,
           market,
           type: 'technical'
-        }).toString(),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
 

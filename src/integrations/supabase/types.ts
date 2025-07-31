@@ -232,49 +232,67 @@ export type Database = {
       }
       stocks: {
         Row: {
+          change: number | null
           change_percent: number | null
           created_at: string | null
           dividend_yield: number | null
+          high: number | null
           id: string
           industry: string | null
           last_updated: string | null
+          low: number | null
           market: string
           market_cap: number | null
           name: string
+          open: number | null
           pe_ratio: number | null
           price: number | null
+          reason: string | null
+          recommendation: string | null
           sector: string | null
           symbol: string
           volume: number | null
         }
         Insert: {
+          change?: number | null
           change_percent?: number | null
           created_at?: string | null
           dividend_yield?: number | null
+          high?: number | null
           id?: string
           industry?: string | null
           last_updated?: string | null
+          low?: number | null
           market: string
           market_cap?: number | null
           name: string
+          open?: number | null
           pe_ratio?: number | null
           price?: number | null
+          reason?: string | null
+          recommendation?: string | null
           sector?: string | null
           symbol: string
           volume?: number | null
         }
         Update: {
+          change?: number | null
           change_percent?: number | null
           created_at?: string | null
           dividend_yield?: number | null
+          high?: number | null
           id?: string
           industry?: string | null
           last_updated?: string | null
+          low?: number | null
           market?: string
           market_cap?: number | null
           name?: string
+          open?: number | null
           pe_ratio?: number | null
           price?: number | null
+          reason?: string | null
+          recommendation?: string | null
           sector?: string | null
           symbol?: string
           volume?: number | null

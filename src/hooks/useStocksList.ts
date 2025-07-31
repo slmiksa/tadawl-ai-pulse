@@ -45,17 +45,17 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
         const transformedStocks = stocksData.map(stock => ({
           symbol: stock.symbol,
           name: stock.name,
-          price: parseFloat(stock.price || '0'),
-          change: parseFloat(stock.change || '0'),
-          changePercent: parseFloat(stock.change_percent || '0'),
-          volume: parseInt(stock.volume || '0'),
-          high: parseFloat(stock.high || '0'),
-          low: parseFloat(stock.low || '0'),
-          open: parseFloat(stock.open || '0'),
+          price: Number(stock.price || 0),
+          change: Number(stock.change || 0),
+          changePercent: Number(stock.change_percent || 0),
+          volume: Number(stock.volume || 0),
+          high: Number(stock.high || stock.price || 0),
+          low: Number(stock.low || stock.price || 0),
+          open: Number(stock.open || stock.price || 0),
           timestamp: stock.last_updated || new Date().toISOString(),
-          market: stock.market,
-          recommendation: stock.recommendation,
-          reason: stock.reason
+          market: (stock.market === 'us' || stock.market === 'saudi') ? stock.market : 'us' as 'us' | 'saudi',
+          recommendation: (stock.recommendation === 'buy' || stock.recommendation === 'sell' || stock.recommendation === 'hold') ? stock.recommendation : 'hold' as 'buy' | 'sell' | 'hold',
+          reason: stock.reason || 'لا توجد توصية متاحة'
         }));
         
         setStocks(transformedStocks);
