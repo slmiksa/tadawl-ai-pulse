@@ -27,7 +27,7 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
     setError(null);
 
     try {
-      // Read from Supabase database directly
+      // First try to get fresh data from database
       let query = supabase.from('stocks').select('*');
       
       if (market !== 'all') {
@@ -36,12 +36,17 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
       
       const { data: stocksData, error: dbError } = await query.order('symbol');
       
-      if (dbError) {
-        throw new Error(`Database error: ${dbError.message}`);
-      }
-      
-      if (stocksData && stocksData.length > 0) {
-        // Transform database data to match expected format
+      // If we have recent data in database (less than 5 minutes old), use it
+      const now = new Date();
+      const hasRecentData = stocksData && stocksData.length > 0 && 
+        stocksData.some(stock => {
+          const lastUpdate = new Date(stock.last_updated || 0);
+          const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+          return diffMinutes < 5;
+        });
+
+      if (hasRecentData && !dbError) {
+        console.log('Using cached data from database');
         const transformedStocks = stocksData.map(stock => ({
           symbol: stock.symbol,
           name: stock.name,
@@ -60,8 +65,34 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
         
         setStocks(transformedStocks);
       } else {
-        setStocks([]);
-        setError('لا توجد بيانات متاحة. يتم تحديث البيانات كل 3 دقائق تلقائياً.');
+        // Fallback to API if no recent database data
+        console.log('Fetching fresh data from API');
+        const { data, error } = await supabase.functions.invoke('stock-data', {
+          body: {
+            type: 'stocks',
+            market: market === 'all' ? 'all' : market
+          }
+        });
+
+        if (error) {
+          throw new Error(`Edge Function error: ${error.message}`);
+        }
+        
+        if (data?.error) {
+          throw new Error(`API error: ${data.error}`);
+        }
+
+        if (data?.stocks && Array.isArray(data.stocks)) {
+          setStocks(data.stocks);
+          if (data.stocks.length === 0) {
+            // Try to initialize stocks if empty
+            console.log('Initializing stock data...');
+            await supabase.functions.invoke('init-stocks');
+            setError('يتم تحميل البيانات للمرة الأولى، يرجى الانتظار...');
+          }
+        } else {
+          throw new Error('Invalid response format from API');
+        }
       }
     } catch (err) {
       console.error('Error fetching stocks:', err);

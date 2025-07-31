@@ -120,9 +120,9 @@ serve(async (req) => {
     
     console.log(`Processing request: type=${dataType}, market=${market}, symbol=${symbol}`);
 
-    // For stocks list endpoint - now reads from database
+    // For stocks list endpoint - hybrid approach: database cache + API fallback
     if (dataType === 'stocks') {
-      console.log('Fetching stocks list from database...');
+      console.log('Fetching stocks list...');
       
       try {
         let query = supabase.from('stocks').select('*');
@@ -133,16 +133,37 @@ serve(async (req) => {
         
         const { data: stocksData, error: dbError } = await query.order('symbol');
         
-        if (dbError) {
-          throw new Error(`Database error: ${dbError.message}`);
-        }
-        
-        if (!stocksData || stocksData.length === 0) {
+        // Check if we have recent data (less than 3 minutes old)
+        const now = new Date();
+        const hasRecentData = stocksData && stocksData.length > 0 && 
+          stocksData.some(stock => {
+            const lastUpdate = new Date(stock.last_updated || 0);
+            const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+            return diffMinutes < 3;
+          });
+
+        if (hasRecentData && !dbError) {
+          console.log(`Returning ${stocksData.length} stocks from database cache`);
+          
+          // Transform database data to API format
+          const apiFormatStocks = stocksData.map(stock => ({
+            symbol: stock.symbol,
+            name: stock.name,
+            price: Number(stock.price || 0),
+            change: Number(stock.change || 0),
+            changePercent: Number(stock.change_percent || 0),
+            volume: Number(stock.volume || 0),
+            high: Number(stock.high || stock.price || 0),
+            low: Number(stock.low || stock.price || 0),
+            open: Number(stock.open || stock.price || 0),
+            timestamp: stock.last_updated || new Date().toISOString(),
+            market: stock.market,
+            recommendation: stock.recommendation || 'hold',
+            reason: stock.reason || 'لا توجد توصية متاحة'
+          }));
+          
           return new Response(
-            JSON.stringify({ 
-              error: 'لا توجد بيانات في قاعدة البيانات. يرجى انتظار التحديث التلقائي.',
-              stocks: []
-            }),
+            JSON.stringify({ stocks: apiFormatStocks }),
             { 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
               status: 200
@@ -150,10 +171,116 @@ serve(async (req) => {
           );
         }
         
-        console.log(`Returning ${stocksData.length} stocks from database`);
+        // If no recent data, fall back to API and update cache
+        console.log('No recent cached data, fetching from API...');
+        
+        // Stock symbols based on market
+        let stockSymbols = [];
+        if (market === 'us') {
+          stockSymbols = [
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
+            'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX'
+          ];
+        } else if (market === 'saudi') {
+          stockSymbols = [
+            '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
+            '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+          ];
+        } else {
+          stockSymbols = [
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
+            'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX',
+            '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
+            '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+          ];
+        }
+        
+        // Fetch fresh data from API
+        const freshStocks = [];
+        let apiCallsCount = 0;
+        
+        for (const stockSymbol of stockSymbols.slice(0, 8)) { // Limit to 8 calls to respect rate limits
+          try {
+            console.log(`Fetching data for ${stockSymbol}...`);
+            apiCallsCount++;
+            
+            const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
+            const response = await fetch(quoteUrl);
+            
+            if (!response.ok) {
+              console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
+              continue;
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.symbol && !data.status && !data.code) {
+              const change = parseFloat(data.change || '0');
+              const price = parseFloat(data.close || data.price || '0');
+              
+              if (price > 0) {
+                const stockData = {
+                  symbol: data.symbol,
+                  name: data.name || stockSymbol,
+                  price: price,
+                  change: change,
+                  change_percent: parseFloat(data.percent_change || '0'),
+                  volume: parseInt(data.volume || '0'),
+                  high: parseFloat(data.high || price.toString()),
+                  low: parseFloat(data.low || price.toString()),
+                  open: parseFloat(data.open || price.toString()),
+                  market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
+                  recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                  reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                         change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                         'حركة جانبية للسهم، ننصح بالانتظار',
+                  last_updated: new Date().toISOString()
+                };
+
+                // Update database cache
+                await supabase
+                  .from('stocks')
+                  .upsert(stockData, { 
+                    onConflict: 'symbol',
+                    ignoreDuplicates: false 
+                  });
+
+                freshStocks.push({
+                  symbol: data.symbol,
+                  name: data.name || stockSymbol,
+                  price: price,
+                  change: change,
+                  changePercent: parseFloat(data.percent_change || '0'),
+                  volume: parseInt(data.volume || '0'),
+                  high: parseFloat(data.high || price.toString()),
+                  low: parseFloat(data.low || price.toString()),
+                  open: parseFloat(data.open || price.toString()),
+                  timestamp: data.datetime || new Date().toISOString(),
+                  market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
+                  recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                  reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                         change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                         'حركة جانبية للسهم، ننصح بالانتظار'
+                });
+              }
+            } else if (data.status === 'error' || data.code) {
+              console.log(`API error for ${stockSymbol}: ${data.message || data.code}`);
+              continue;
+            }
+            
+            // Rate limiting delay
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+          } catch (error) {
+            console.error(`Error fetching ${stockSymbol}:`, error);
+            continue;
+          }
+        }
+        
+        console.log(`Returning ${freshStocks.length} fresh stocks from API`);
         
         return new Response(
-          JSON.stringify({ stocks: stocksData }),
+          JSON.stringify({ stocks: freshStocks }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
@@ -161,10 +288,10 @@ serve(async (req) => {
         );
         
       } catch (error) {
-        console.error('Database error:', error);
+        console.error('Error in stocks endpoint:', error);
         return new Response(
           JSON.stringify({ 
-            error: `خطأ في قاعدة البيانات: ${error.message}`,
+            error: `خطأ في جلب البيانات: ${error.message}`,
             stocks: []
           }),
           { 
