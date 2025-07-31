@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,7 +8,11 @@ const corsHeaders = {
 };
 
 const TWELVEDATA_API_KEY = Deno.env.get('TWELVEDATA_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 const BASE_URL = 'https://api.twelvedata.com';
+
+const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
 
 // Cache for stock data (in-memory for this session)
 const stockCache = new Map();
@@ -115,128 +120,59 @@ serve(async (req) => {
     
     console.log(`Processing request: type=${dataType}, market=${market}, symbol=${symbol}`);
 
-    // For stocks list endpoint
+    // For stocks list endpoint - now reads from database
     if (dataType === 'stocks') {
-      console.log('Fetching stocks list...');
+      console.log('Fetching stocks list from database...');
       
-      // Check cache first
-      const cacheKey = `stocks_${market}`;
-      const cachedData = stockCache.get(cacheKey);
-      if (cachedData && (Date.now() - cachedData.timestamp) < CACHE_DURATION) {
-        console.log('Returning cached data');
+      try {
+        let query = supabase.from('stocks').select('*');
+        
+        if (market !== 'all') {
+          query = query.eq('market', market);
+        }
+        
+        const { data: stocksData, error: dbError } = await query.order('symbol');
+        
+        if (dbError) {
+          throw new Error(`Database error: ${dbError.message}`);
+        }
+        
+        if (!stocksData || stocksData.length === 0) {
+          return new Response(
+            JSON.stringify({ 
+              error: 'لا توجد بيانات في قاعدة البيانات. يرجى انتظار التحديث التلقائي.',
+              stocks: []
+            }),
+            { 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200
+            }
+          );
+        }
+        
+        console.log(`Returning ${stocksData.length} stocks from database`);
+        
         return new Response(
-          JSON.stringify({ stocks: cachedData.data }),
+          JSON.stringify({ stocks: stocksData }),
           { 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 200
           }
         );
-      }
-      
-      // Comprehensive stock symbols for all markets
-      let stockSymbols = [];
-      if (market === 'us') {
-        // Top US stocks - comprehensive list
-        stockSymbols = [
-          'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-          'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU',
-          'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN', 'TWLO',
-          'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
-          'JNJ', 'PFE', 'UNH', 'ABT', 'MRK', 'ABBV', 'CVS', 'LLY', 'TMO', 'DHR',
-          'KO', 'PEP', 'WMT', 'HD', 'MCD', 'DIS', 'NKE', 'SBUX', 'LOW', 'TGT',
-          'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX', 'HES',
-          'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX'
-        ];
-      } else if (market === 'saudi') {
-        // Saudi stocks from Tadawul
-        stockSymbols = [
-          '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-          '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR',
-          '1830.SR', '2040.SR', '4003.SR', '2001.SR', '1140.SR', '2230.SR', '4004.SR', '2110.SR',
-          '2260.SR', '2350.SR', '1201.SR', '2290.SR', '4005.SR', '2310.SR', '1301.SR', '2320.SR',
-          '4006.SR', '2330.SR', '1302.SR', '2340.SR', '4007.SR', '2360.SR', '1303.SR', '2370.SR'
-        ];
-      } else {
-        // Mixed markets
-        stockSymbols = [
-          'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-          'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX',
-          '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-          '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
-        ];
-      }
-      
-      // Fetch from API only - no fallback data
-      const stocksData = [];
-      let apiCallsCount = 0;
-      
-      for (const stockSymbol of stockSymbols) {
-        try {
-          console.log(`Fetching data for ${stockSymbol}...`);
-          apiCallsCount++;
-          
-          const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
-          const response = await fetch(quoteUrl);
-          
-          if (!response.ok) {
-            console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
-            continue; // Continue with next stock instead of breaking
+        
+      } catch (error) {
+        console.error('Database error:', error);
+        return new Response(
+          JSON.stringify({ 
+            error: `خطأ في قاعدة البيانات: ${error.message}`,
+            stocks: []
+          }),
+          { 
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
           }
-          
-          const data = await response.json();
-          
-          if (data && data.symbol && !data.status) {
-            const change = parseFloat(data.change || '0');
-            const price = parseFloat(data.close || data.price || '0');
-            
-            if (price > 0) {
-              stocksData.push({
-                symbol: data.symbol,
-                name: data.name || stockSymbol,
-                price: price,
-                change: change,
-                changePercent: parseFloat(data.percent_change || '0'),
-                volume: parseInt(data.volume || '0'),
-                high: parseFloat(data.high || price.toString()),
-                low: parseFloat(data.low || price.toString()),
-                open: parseFloat(data.open || price.toString()),
-                timestamp: data.datetime || new Date().toISOString(),
-                market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
-                recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
-                reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
-                       change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
-                       'حركة جانبية للسهم، ننصح بالانتظار'
-              });
-            }
-          } else if (data.status === 'error') {
-            console.log(`API error for ${stockSymbol}: ${data.message}`);
-            continue; // Continue with next stock
-          }
-          
-          // Small delay to respect rate limits
-          await new Promise(resolve => setTimeout(resolve, 200));
-          
-        } catch (error) {
-          console.error(`Error fetching ${stockSymbol}:`, error);
-          continue; // Continue with next stock
-        }
+        );
       }
-      
-      // Cache the data
-      stockCache.set(cacheKey, {
-        data: stocksData,
-        timestamp: Date.now()
-      });
-      
-      console.log(`Returning ${stocksData.length} stocks from API only`);
-      
-      return new Response(
-        JSON.stringify({ stocks: stocksData }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200
-        }
-      );
     }
     
     // For individual stock data (not stocks list)
