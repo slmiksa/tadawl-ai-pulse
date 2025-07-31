@@ -174,24 +174,51 @@ serve(async (req) => {
         // If no recent data, fall back to API and update cache
         console.log('No recent cached data, fetching from API...');
         
-        // Stock symbols based on market
+        // Stock symbols based on market - EXPANDED LISTS
         let stockSymbols = [];
         if (market === 'us') {
           stockSymbols = [
-            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-            'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX'
+            // Tech giants
+            'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC', 'ORCL', 'CRM', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU', 'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN', 'TWLO',
+            // Banks & Finance
+            'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF', 'AXP', 'BLK', 'SPG', 'V', 'MA', 'BRK.B',
+            // Healthcare & Pharma
+            'JNJ', 'PFE', 'UNH', 'ABT', 'MRK', 'ABBV', 'CVS', 'LLY', 'TMO', 'DHR', 'BMY', 'AMGN', 'GILD', 'BIIB', 'REGN',
+            // Consumer & Retail
+            'KO', 'PEP', 'WMT', 'HD', 'MCD', 'DIS', 'NKE', 'SBUX', 'LOW', 'TGT', 'COST', 'TJX', 'F', 'GM', 'TSLA',
+            // Energy & Utilities
+            'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX', 'HES', 'OXY', 'KMI', 'WMB', 'EPD',
+            // Industrials
+            'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX', 'NOC', 'GE', 'EMR', 'ITW'
           ];
         } else if (market === 'saudi') {
           stockSymbols = [
-            '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-            '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+            // البنوك
+            '1120.SR', '1180.SR', '1050.SR', '1210.SR', '1030.SR', '1140.SR', '1150.SR', '1060.SR', '1080.SR', '1020.SR', '1040.SR',
+            // البتروكيماويات والطاقة
+            '2222.SR', '2010.SR', '2020.SR', '2030.SR', '2350.SR', '2380.SR', '2001.SR', '2002.SR', '2060.SR', '2090.SR', '2040.SR', '2170.SR', '2310.SR', '2320.SR', '2330.SR', '2340.SR', '1201.SR', '1211.SR', '1301.SR', '1302.SR', '1303.SR',
+            // الاسمنت
+            '3001.SR', '3002.SR', '3003.SR', '3004.SR', '3005.SR', '3007.SR', '3008.SR', '3009.SR', '3010.SR', '3020.SR', '3030.SR', '3040.SR', '3050.SR', '3060.SR', '3091.SR',
+            // التجزئة والاستهلاك
+            '4001.SR', '4002.SR', '4003.SR', '4004.SR', '4005.SR', '4006.SR', '4007.SR', '4008.SR', '4009.SR', '4010.SR', '4020.SR', '4030.SR', '4040.SR', '4050.SR', '4051.SR', '4061.SR', '4070.SR', '4080.SR', '4090.SR', '4100.SR', '4110.SR', '4140.SR', '4150.SR', '4160.SR', '4162.SR', '4163.SR', '4164.SR', '4170.SR', '4180.SR', '4190.SR', '4191.SR', '4192.SR', '4200.SR', '4210.SR', '4220.SR', '4230.SR', '4240.SR', '4250.SR', '4260.SR', '4261.SR', '4262.SR', '4270.SR', '4280.SR', '4290.SR', '4291.SR', '4292.SR', '4300.SR', '4310.SR', '4320.SR', '4321.SR', '4322.SR', '4323.SR', '4330.SR', '4331.SR', '4332.SR', '4333.SR', '4334.SR', '4335.SR', '4336.SR', '4337.SR', '4338.SR', '4339.SR', '4340.SR',
+            // الطيران والنقل
+            '7010.SR', '7020.SR', '7030.SR', '7040.SR', '7200.SR', '7201.SR', '7202.SR', '7203.SR',
+            // الاتصالات والتقنية
+            '7010.SR', '7020.SR', '7030.SR', '7040.SR', '7110.SR', '7200.SR', '7201.SR', '7202.SR', '7203.SR',
+            // الرعاية الصحية
+            '2140.SR', '4004.SR', '2070.SR', '4005.SR',
+            // المرافق العامة
+            '2082.SR', '2083.SR', '5110.SR', '2082.SR',
+            // الصناعات
+            '1301.SR', '1302.SR', '1303.SR', '2001.SR', '2002.SR', '2040.SR', '2170.SR', '2310.SR', '2320.SR', '2330.SR', '2340.SR'
           ];
         } else {
+          // Combined markets with top performers
           stockSymbols = [
-            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-            'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX',
-            '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
-            '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+            // Top US stocks
+            'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC', 'JPM', 'BAC', 'JNJ', 'PFE', 'KO', 'PEP', 'WMT', 'HD', 'XOM', 'CVX', 'V', 'MA', 'UNH', 'DIS', 'COST', 'CRM', 'PYPL', 'ADBE', 'ORCL', 'TJX',
+            // Top Saudi stocks
+            '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR', '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR', '1140.SR', '2001.SR', '2040.SR', '1301.SR'
           ];
         }
         
@@ -199,7 +226,7 @@ serve(async (req) => {
         const freshStocks = [];
         let apiCallsCount = 0;
         
-        for (const stockSymbol of stockSymbols.slice(0, 8)) { // Limit to 8 calls to respect rate limits
+        for (const stockSymbol of stockSymbols.slice(0, 20)) { // Increased to 20 calls for more stocks
           try {
             console.log(`Fetching data for ${stockSymbol}...`);
             apiCallsCount++;
@@ -268,8 +295,8 @@ serve(async (req) => {
               continue;
             }
             
-            // Rate limiting delay
-            await new Promise(resolve => setTimeout(resolve, 300));
+            // Reduced rate limiting delay for faster response
+            await new Promise(resolve => setTimeout(resolve, 150));
             
           } catch (error) {
             console.error(`Error fetching ${stockSymbol}:`, error);
