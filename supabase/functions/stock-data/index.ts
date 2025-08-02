@@ -145,108 +145,242 @@ async function refreshStocksInBackground(market: string, stockSymbols: string[])
   }
 }
 
-// Fetch with fallback function - very conservative API usage
+// Fetch with comprehensive stock data
 async function fetchFromApiWithFallback(market: string) {
   try {
-    // Stock symbols based on market - highly reduced for API efficiency
+    // Comprehensive stock symbols for each market
     let stockSymbols = [];
     if (market === 'us') {
-      stockSymbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA'];
+      stockSymbols = [
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
+        'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU',
+        'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN', 'TWLO',
+        'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
+        'JNJ', 'PFE', 'UNH', 'ABT', 'MRK', 'ABBV', 'CVS', 'LLY', 'TMO', 'DHR',
+        'KO', 'PEP', 'WMT', 'HD', 'MCD', 'DIS', 'NKE', 'SBUX', 'LOW', 'TGT',
+        'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX', 'HES',
+        'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX'
+      ];
     } else if (market === 'saudi') {
-      stockSymbols = ['2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR'];
+      stockSymbols = [
+        '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
+        '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR',
+        '1020.SR', '1030.SR', '1060.SR', '1080.SR', '1140.SR', '1150.SR', '1160.SR', '1183.SR',
+        '1201.SR', '1202.SR', '1211.SR', '1214.SR', '1301.SR', '1302.SR', '1320.SR', '1321.SR',
+        '2001.SR', '2002.SR', '2040.SR', '2050.SR', '2070.SR', '2080.SR', '2100.SR', '2110.SR'
+      ];
     } else {
-      stockSymbols = ['AAPL', 'MSFT', '2222.SR', '2010.SR'];
+      stockSymbols = [
+        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX',
+        '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '1210.SR'
+      ];
     }
     
     const freshStocks = [];
     
-    // Try only 3 API calls to conserve credits
-    const conservativeLimit = Math.min(stockSymbols.length, 3);
+    // Use time-series endpoint to fetch all symbols in one request
+    console.log(`Fetching data for ${stockSymbols.length} ${market} stocks...`);
     
-    for (const stockSymbol of stockSymbols.slice(0, conservativeLimit)) {
-      try {
-        console.log(`Trying conservative API call for ${stockSymbol}...`);
-        
-        const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
-        const response = await fetch(quoteUrl);
-        
-        if (!response.ok) {
-          console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
-          break; // Stop trying if API is failing
-        }
-        
-        const data = await response.json();
-        
-        if (data && data.symbol && !data.status && !data.code) {
-          const change = parseFloat(data.change || '0');
-          const price = parseFloat(data.close || data.price || '0');
+    const timeSeriesUrl = `${BASE_URL}/time_series?symbol=${stockSymbols.join(',')}&interval=1min&outputsize=1&apikey=${TWELVEDATA_API_KEY}`;
+    const response = await fetch(timeSeriesUrl);
+    
+    if (response.ok) {
+      const data = await response.json();
+      
+      // Handle single symbol response
+      if (data.values && data.meta) {
+        const latestData = data.values[0];
+        if (latestData && data.meta.symbol) {
+          const price = parseFloat(latestData.close);
+          const open = parseFloat(latestData.open);
+          const change = price - open;
+          const changePercent = (change / open) * 100;
           
-          if (price > 0) {
-            const stockData = {
-              symbol: data.symbol,
-              name: data.name || stockSymbol,
-              price: price,
-              change: change,
-              change_percent: parseFloat(data.percent_change || '0'),
-              volume: parseInt(data.volume || '0'),
-              high: parseFloat(data.high || price.toString()),
-              low: parseFloat(data.low || price.toString()),
-              open: parseFloat(data.open || price.toString()),
-              market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
-              recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
-              reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
-                     change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
-                     'حركة جانبية للسهم، ننصح بالانتظار',
-              last_updated: new Date().toISOString()
-            };
-
-            await supabase
-              .from('stocks')
-              .upsert(stockData, { 
-                onConflict: 'symbol',
-                ignoreDuplicates: false 
-              });
-
-            freshStocks.push({
-              symbol: data.symbol,
-              name: data.name || stockSymbol,
-              price: price,
-              change: change,
-              changePercent: parseFloat(data.percent_change || '0'),
-              volume: parseInt(data.volume || '0'),
-              high: parseFloat(data.high || price.toString()),
-              low: parseFloat(data.low || price.toString()),
-              open: parseFloat(data.open || price.toString()),
-              timestamp: data.datetime || new Date().toISOString(),
-              market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
-              recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
-              reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
-                     change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
-                     'حركة جانبية للسهم، ننصح بالانتظار'
-            });
-          }
-        } else if (data.status === 'error' || data.code) {
-          console.log(`API error/limit for ${stockSymbol}: ${data.message || data.code}`);
-          break; // Stop trying if we hit rate limits
+          freshStocks.push({
+            symbol: data.meta.symbol,
+            name: data.meta.symbol,
+            price: price,
+            change: change,
+            changePercent: changePercent,
+            volume: parseInt(latestData.volume || '0'),
+            high: parseFloat(latestData.high),
+            low: parseFloat(latestData.low),
+            open: open,
+            timestamp: latestData.datetime,
+            market: data.meta.symbol.endsWith('.SR') ? 'saudi' : 'us',
+            recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+            reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                   change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                   'حركة جانبية للسهم، ننصح بالانتظار'
+          });
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-      } catch (error) {
-        console.error(`Error fetching ${stockSymbol}:`, error);
-        break; // Stop on any error
+      }
+      
+      // Handle multiple symbols response
+      if (typeof data === 'object' && !data.values && !data.meta) {
+        for (const [symbol, stockData] of Object.entries(data)) {
+          if (stockData && typeof stockData === 'object' && (stockData as any).values) {
+            const latestData = (stockData as any).values[0];
+            if (latestData) {
+              const price = parseFloat(latestData.close);
+              const open = parseFloat(latestData.open);
+              const change = price - open;
+              const changePercent = (change / open) * 100;
+              
+              freshStocks.push({
+                symbol: symbol,
+                name: symbol,
+                price: price,
+                change: change,
+                changePercent: changePercent,
+                volume: parseInt(latestData.volume || '0'),
+                high: parseFloat(latestData.high),
+                low: parseFloat(latestData.low),
+                open: open,
+                timestamp: latestData.datetime,
+                market: symbol.endsWith('.SR') ? 'saudi' : 'us',
+                recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                       change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                       'حركة جانبية للسهم، ننصح بالانتظار'
+              });
+            }
+          }
+        }
       }
     }
     
-    console.log(`Returning ${freshStocks.length} stocks from conservative API calls`);
-    
-    // If API failed completely, generate fallback data
+    // If time-series didn't work, fallback to individual quote calls
     if (freshStocks.length === 0) {
-      console.log('API failed completely, generating fallback data...');
-      const fallbackSymbols = market === 'us' ? ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX'] :
-                              market === 'saudi' ? ['2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '1210.SR', '1180.SR', '1050.SR'] :
-                              ['AAPL', 'MSFT', 'GOOGL', '2222.SR', '2010.SR', '1120.SR'];
-      const fallbackStocks = generateFallbackStocks(fallbackSymbols, market, []);
+      console.log('Time-series failed, trying individual quotes...');
+      
+      for (const stockSymbol of stockSymbols.slice(0, 20)) { // Limit to prevent API abuse
+        try {
+          const quoteUrl = `${BASE_URL}/quote?symbol=${stockSymbol}&apikey=${TWELVEDATA_API_KEY}`;
+          const response = await fetch(quoteUrl);
+          
+          if (!response.ok) {
+            console.error(`HTTP error for ${stockSymbol}: ${response.status}`);
+            continue;
+          }
+          
+          const data = await response.json();
+          
+          if (data && data.symbol && !data.status && !data.code) {
+            const change = parseFloat(data.change || '0');
+            const price = parseFloat(data.close || data.price || '0');
+            
+            if (price > 0) {
+              const stockData = {
+                symbol: data.symbol,
+                name: data.name || stockSymbol,
+                price: price,
+                change: change,
+                change_percent: parseFloat(data.percent_change || '0'),
+                volume: parseInt(data.volume || '0'),
+                high: parseFloat(data.high || price.toString()),
+                low: parseFloat(data.low || price.toString()),
+                open: parseFloat(data.open || price.toString()),
+                market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
+                recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                       change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                       'حركة جانبية للسهم، ننصح بالانتظار',
+                last_updated: new Date().toISOString()
+              };
+
+              await supabase
+                .from('stocks')
+                .upsert(stockData, { 
+                  onConflict: 'symbol',
+                  ignoreDuplicates: false 
+                });
+
+              freshStocks.push({
+                symbol: data.symbol,
+                name: data.name || stockSymbol,
+                price: price,
+                change: change,
+                changePercent: parseFloat(data.percent_change || '0'),
+                volume: parseInt(data.volume || '0'),
+                high: parseFloat(data.high || price.toString()),
+                low: parseFloat(data.low || price.toString()),
+                open: parseFloat(data.open || price.toString()),
+                timestamp: data.datetime || new Date().toISOString(),
+                market: stockSymbol.endsWith('.SR') ? 'saudi' : 'us',
+                recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                       change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                       'حركة جانبية للسهم، ننصح بالانتظار'
+              });
+            }
+          }
+          
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+        } catch (error) {
+          console.error(`Error fetching ${stockSymbol}:`, error);
+          continue;
+        }
+      }
+    }
+    
+    // Store all fetched stocks to database
+    if (freshStocks.length > 0) {
+      for (const stock of freshStocks) {
+        await supabase
+          .from('stocks')
+          .upsert({
+            symbol: stock.symbol,
+            name: stock.name,
+            price: stock.price,
+            change: stock.change,
+            change_percent: stock.changePercent,
+            volume: stock.volume,
+            high: stock.high,
+            low: stock.low,
+            open: stock.open,
+            market: stock.market,
+            recommendation: stock.recommendation,
+            reason: stock.reason,
+            last_updated: new Date().toISOString()
+          }, { 
+            onConflict: 'symbol',
+            ignoreDuplicates: false 
+          });
+      }
+    }
+    
+    console.log(`Returning ${freshStocks.length} stocks from API calls`);
+    
+    // If API failed completely, generate comprehensive fallback data
+    if (freshStocks.length === 0) {
+      console.log('API failed completely, generating comprehensive fallback data...');
+      const fallbackStocks = generateFallbackStocks(stockSymbols, market, []);
+      
+      // Store fallback data to database
+      for (const stock of fallbackStocks) {
+        await supabase
+          .from('stocks')
+          .upsert({
+            symbol: stock.symbol,
+            name: stock.name,
+            price: stock.price,
+            change: stock.change,
+            change_percent: stock.changePercent,
+            volume: stock.volume,
+            high: stock.high,
+            low: stock.low,
+            open: stock.open,
+            market: stock.market,
+            recommendation: stock.recommendation,
+            reason: stock.reason,
+            last_updated: new Date().toISOString()
+          }, { 
+            onConflict: 'symbol',
+            ignoreDuplicates: false 
+          });
+      }
       
       return new Response(
         JSON.stringify({ stocks: fallbackStocks }),
@@ -268,8 +402,18 @@ async function fetchFromApiWithFallback(market: string) {
   } catch (error) {
     console.error('API fallback failed:', error);
     
-    // Final fallback - generate demo data
-    const demoStocks = generateFallbackStocks(['AAPL', 'MSFT', '2222.SR'], market, []);
+    // Final fallback - generate comprehensive demo data
+    const allSymbols = market === 'us' ? [
+      'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
+      'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU'
+    ] : market === 'saudi' ? [
+      '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '7010.SR', '1210.SR', '4030.SR',
+      '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR'
+    ] : [
+      'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', '2222.SR', '2010.SR', '1120.SR'
+    ];
+    
+    const demoStocks = generateFallbackStocks(allSymbols, market, []);
     
     return new Response(
       JSON.stringify({ stocks: demoStocks }),
