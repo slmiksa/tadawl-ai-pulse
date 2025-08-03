@@ -11,17 +11,27 @@ const TodayAnalysis: React.FC = () => {
     saudiMarket: { status: 'closed', change: 0, volume: '0', sentiment: 'neutral' }
   });
 
-  // Calculate real market data from API
+  // Calculate real market data from API and market status
   useEffect(() => {
     if (usStocks.length > 0) {
       const avgChange = usStocks.reduce((sum, stock) => sum + stock.changePercent, 0) / usStocks.length;
       const totalVolume = usStocks.reduce((sum, stock) => sum + (stock.volume || 0), 0);
       const volumeInBillions = (totalVolume / 1000000000).toFixed(1);
       
+      // Real US market hours check (EST timezone)
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const est = new Date(utc + (-5 * 3600000)); // EST = UTC-5
+      const day = est.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const hour = est.getHours();
+      const isWeekday = day >= 1 && day <= 5;
+      const isMarketHours = hour >= 9 && hour < 16; // 9:30 AM to 4 PM EST
+      const usStatus = isWeekday && isMarketHours ? 'open' : 'closed';
+      
       setMarketOverview(prev => ({
         ...prev,
         usMarket: {
-          status: 'open',
+          status: usStatus,
           change: parseFloat(avgChange.toFixed(2)),
           volume: `${volumeInBillions}B`,
           sentiment: avgChange > 0 ? 'positive' : avgChange < 0 ? 'negative' : 'neutral'
@@ -34,10 +44,20 @@ const TodayAnalysis: React.FC = () => {
       const totalVolume = saudiStocks.reduce((sum, stock) => sum + (stock.volume || 0), 0);
       const volumeInBillions = (totalVolume / 1000000000).toFixed(1);
       
+      // Real Saudi market hours check (AST timezone)
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const ast = new Date(utc + (3 * 3600000)); // AST = UTC+3
+      const day = ast.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const hour = ast.getHours();
+      const isWeekday = day >= 0 && day <= 4; // Sunday to Thursday
+      const isMarketHours = hour >= 10 && hour < 15; // 10 AM to 3 PM AST
+      const saudiStatus = isWeekday && isMarketHours ? 'open' : 'closed';
+      
       setMarketOverview(prev => ({
         ...prev,
         saudiMarket: {
-          status: 'closed',
+          status: saudiStatus,
           change: parseFloat(avgChange.toFixed(2)),
           volume: `${volumeInBillions}B`,
           sentiment: avgChange > 0 ? 'positive' : avgChange < 0 ? 'negative' : 'neutral'
@@ -104,26 +124,36 @@ const TodayAnalysis: React.FC = () => {
 
   const topOpportunities = getTopOpportunities();
 
-  const marketNews = [
-    {
-      title: 'تحديث بيانات السوق في الوقت الفعلي',
-      time: new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      impact: 'positive',
-      description: 'يتم تحديث جميع البيانات من مصادر موثوقة للحصول على أدق المعلومات',
-    },
-    {
-      title: 'تحليل تقلبات السوق اليومية',
-      time: new Date(Date.now() - 30 * 60 * 1000).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      impact: 'neutral',
-      description: 'مراقبة مستمرة لحركة الأسعار والاتجاهات السائدة',
-    },
-    {
-      title: 'مؤشرات الأداء والتوصيات',
-      time: new Date(Date.now() - 60 * 60 * 1000).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
-      impact: 'positive',
-      description: 'توصيات مبنية على التحليل الفني والأساسي للأسهم',
-    },
-  ];
+  // Real system updates based on actual data
+  const getSystemUpdates = () => {
+    const totalStocks = usStocks.length + saudiStocks.length;
+    const totalRealData = [...usStocks, ...saudiStocks].filter(stock => stock.volume > 0).length;
+    const lastUpdateTime = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+    const dataFreshness = totalRealData > 0 ? 'positive' : 'neutral';
+    
+    return [
+      {
+        title: `تم تحديث ${totalStocks} سهم بنجاح`,
+        time: lastUpdateTime,
+        impact: 'positive',
+        description: `تم جلب البيانات لـ ${totalRealData} سهم من مصادر حقيقية و ${totalStocks - totalRealData} سهم من البيانات الاحتياطية`,
+      },
+      {
+        title: `حالة الأسواق: أمريكي ${getMarketStatus(marketOverview.usMarket.status).text} - سعودي ${getMarketStatus(marketOverview.saudiMarket.status).text}`,
+        time: new Date(Date.now() - 5 * 60 * 1000).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        impact: marketOverview.usMarket.status === 'open' || marketOverview.saudiMarket.status === 'open' ? 'positive' : 'neutral',
+        description: 'مراقبة مستمرة لحالة الأسواق العالمية وساعات التداول',
+      },
+      {
+        title: `معدل التغيير: أمريكي ${marketOverview.usMarket.change.toFixed(2)}% - سعودي ${marketOverview.saudiMarket.change.toFixed(2)}%`,
+        time: new Date(Date.now() - 10 * 60 * 1000).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        impact: (marketOverview.usMarket.change + marketOverview.saudiMarket.change) / 2 > 0 ? 'positive' : 'negative',
+        description: 'تحليل الاتجاهات العامة للأسواق بناءً على البيانات الحقيقية',
+      },
+    ];
+  };
+
+  const systemUpdates = getSystemUpdates();
 
   const getMarketStatus = (status: string) => {
     switch (status) {
@@ -236,20 +266,25 @@ const TodayAnalysis: React.FC = () => {
             {topOpportunities.map((opportunity, index) => (
               <div key={opportunity.symbol} className="bg-gray-700/50 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="flex items-center space-x-2">
-                        <h3 className="text-lg font-bold text-white">{opportunity.symbol}</h3>
-                        <span className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded">
-                          {opportunity.market === 'us' ? 'أمريكي' : 'سعودي'}
-                        </span>
+                      <div className="flex items-center space-x-4">
+                        <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <button 
+                              onClick={() => alert(`تحليل الفرصة لـ ${opportunity.symbol}:\n${opportunity.opportunity}\n\nالسعر الحالي: ${opportunity.market === 'us' ? `$${opportunity.price.toFixed(2)}` : `${opportunity.price.toFixed(2)} ر.س`}\nالتغيير: ${opportunity.change >= 0 ? '+' : ''}${opportunity.change.toFixed(2)}%\nقوة الإشارة: ${opportunity.strength}`)}
+                              className="text-lg font-bold text-white hover:text-purple-400 transition-colors underline decoration-dotted"
+                            >
+                              {opportunity.symbol}
+                            </button>
+                            <span className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded">
+                              {opportunity.market === 'us' ? 'أمريكي' : 'سعودي'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-400">{opportunity.name}</p>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-400">{opportunity.name}</p>
-                    </div>
-                  </div>
                   <div className="text-right">
                     <p className="text-xl font-bold text-white">
                       {opportunity.market === 'us' ? `$${opportunity.price.toFixed(2)}` : `${opportunity.price.toFixed(2)} ر.س`}
@@ -284,20 +319,20 @@ const TodayAnalysis: React.FC = () => {
           تحديثات النظام
         </h2>
         <div className="space-y-4">
-          {marketNews.map((news, index) => (
+          {systemUpdates.map((update, index) => (
             <div key={index} className="border-l-4 border-purple-500 pl-4 py-2">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold">{news.title}</h3>
-                <span className="text-sm text-gray-400">{news.time}</span>
+                <h3 className="text-white font-semibold">{update.title}</h3>
+                <span className="text-sm text-gray-400">{update.time}</span>
               </div>
-              <p className="text-sm text-gray-300 mb-2">{news.description}</p>
+              <p className="text-sm text-gray-300 mb-2">{update.description}</p>
               <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                news.impact === 'positive' ? 'bg-green-500/20 text-green-400' :
-                news.impact === 'negative' ? 'bg-red-500/20 text-red-400' :
+                update.impact === 'positive' ? 'bg-green-500/20 text-green-400' :
+                update.impact === 'negative' ? 'bg-red-500/20 text-red-400' :
                 'bg-gray-500/20 text-gray-400'
               }`}>
-                {news.impact === 'positive' ? 'إيجابي' :
-                 news.impact === 'negative' ? 'سلبي' : 'محايد'}
+                {update.impact === 'positive' ? 'إيجابي' :
+                 update.impact === 'negative' ? 'سلبي' : 'محايد'}
               </span>
             </div>
           ))}
