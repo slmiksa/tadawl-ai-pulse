@@ -1,50 +1,172 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Settings, Check, X, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Notifications: React.FC = () => {
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      type: 'recommendation',
-      title: 'تغيير في توصية AAPL',
-      message: 'تم تحديث توصية Apple من انتظار إلى شراء',
-      time: '10:30 ص',
-      read: false,
-      icon: TrendingUp,
-      color: 'text-green-400',
-    },
-    {
-      id: 2,
-      type: 'alert',
-      title: 'تنبيه مستوى دعم',
-      message: 'سهم TSLA وصل إلى مستوى الدعم عند 245$',
-      time: '09:45 ص',
-      read: false,
-      icon: AlertTriangle,
-      color: 'text-yellow-400',
-    },
-    {
-      id: 3,
-      type: 'recommendation',
-      title: 'توصية بيع جديدة',
-      message: 'توصية بيع لسهم META بسبب كسر مستوى الدعم',
-      time: '08:20 ص',
-      read: true,
-      icon: TrendingDown,
-      color: 'text-red-400',
-    },
-    {
-      id: 4,
-      type: 'signal',
-      title: 'إشارة فنية قوية',
-      message: 'سهم 2222.SR يظهر نموذج صاعد قوي',
-      time: 'أمس',
-      read: true,
-      icon: TrendingUp,
-      color: 'text-green-400',
-    },
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [favoriteStocks, setFavoriteStocks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchFavoriteStocks();
+    fetchNotifications();
+  }, []);
+
+  const fetchFavoriteStocks = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get user's watchlists
+      const { data: watchlists } = await supabase
+        .from('watchlists')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (watchlists && watchlists.length > 0) {
+        // Get stocks in watchlists
+        const watchlistIds = watchlists.map(w => w.id);
+        const { data: watchlistStocks } = await supabase
+          .from('watchlist_stocks')
+          .select(`
+            stock_id,
+            stocks (
+              symbol,
+              name,
+              price,
+              change_percent,
+              recommendation,
+              support_level_1,
+              resistance_level_1
+            )
+          `)
+          .in('watchlist_id', watchlistIds);
+
+        if (watchlistStocks) {
+          setFavoriteStocks(watchlistStocks.map(ws => ws.stocks));
+          generateNotificationsFromStocks(watchlistStocks.map(ws => ws.stocks));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching favorite stocks:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateNotificationsFromStocks = (stocks) => {
+    const notifications = [];
+    
+    stocks.forEach((stock, index) => {
+      if (!stock) return;
+
+      // Recommendation change notifications
+      if (stock.recommendation === 'buy') {
+        notifications.push({
+          id: index * 3 + 1,
+          type: 'recommendation',
+          title: `توصية شراء: ${stock.symbol}`,
+          message: `توصية شراء قوية لسهم ${stock.name} - ${stock.symbol}`,
+          time: 'منذ ساعة',
+          read: false,
+          icon: TrendingUp,
+          color: 'text-green-400',
+        });
+      } else if (stock.recommendation === 'sell') {
+        notifications.push({
+          id: index * 3 + 2,
+          type: 'recommendation',
+          title: `توصية بيع: ${stock.symbol}`,
+          message: `توصية بيع لسهم ${stock.name} - ${stock.symbol}`,
+          time: 'منذ ساعتين',
+          read: false,
+          icon: TrendingDown,
+          color: 'text-red-400',
+        });
+      }
+
+      // Support/Resistance level alerts
+      if (stock.support_level_1 && stock.price && Math.abs(stock.price - stock.support_level_1) / stock.price < 0.02) {
+        notifications.push({
+          id: index * 3 + 3,
+          type: 'alert',
+          title: `تنبيه مستوى دعم: ${stock.symbol}`,
+          message: `سهم ${stock.name} اقترب من مستوى الدعم عند ${stock.support_level_1?.toFixed(2)}`,
+          time: 'منذ 30 دقيقة',
+          read: false,
+          icon: AlertTriangle,
+          color: 'text-yellow-400',
+        });
+      }
+
+      if (stock.resistance_level_1 && stock.price && Math.abs(stock.price - stock.resistance_level_1) / stock.price < 0.02) {
+        notifications.push({
+          id: index * 3 + 4,
+          type: 'alert',
+          title: `تنبيه مستوى مقاومة: ${stock.symbol}`,
+          message: `سهم ${stock.name} اقترب من مستوى المقاومة عند ${stock.resistance_level_1?.toFixed(2)}`,
+          time: 'منذ 45 دقيقة',
+          read: false,
+          icon: AlertTriangle,
+          color: 'text-orange-400',
+        });
+      }
+
+      // Strong movement alerts
+      if (stock.change_percent && Math.abs(stock.change_percent) > 5) {
+        notifications.push({
+          id: index * 3 + 5,
+          type: 'signal',
+          title: `حركة قوية: ${stock.symbol}`,
+          message: `سهم ${stock.name} يشهد ${stock.change_percent > 0 ? 'ارتفاع' : 'انخفاض'} قوي بنسبة ${Math.abs(stock.change_percent).toFixed(2)}%`,
+          time: 'منذ 15 دقيقة',
+          read: false,
+          icon: stock.change_percent > 0 ? TrendingUp : TrendingDown,
+          color: stock.change_percent > 0 ? 'text-green-400' : 'text-red-400',
+        });
+      }
+    });
+
+    setNotifications(notifications.slice(0, 10)); // Limit to 10 notifications
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const formattedNotifications = data.map(notif => ({
+          id: notif.id,
+          type: notif.type,
+          title: notif.title,
+          message: notif.message,
+          time: new Date(notif.created_at).toLocaleTimeString('ar-SA', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          read: notif.is_read,
+          icon: notif.type === 'recommendation' ? TrendingUp : AlertTriangle,
+          color: notif.type === 'recommendation' ? 'text-green-400' : 'text-yellow-400',
+        }));
+        setNotifications(formattedNotifications);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const [settings, setSettings] = useState({
     recommendations: true,

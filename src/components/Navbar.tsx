@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X } from 'lucide-react';
+import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X, Crown, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface NavbarProps {
   activeTab: string;
@@ -21,8 +22,13 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
     { id: 'performance', label: 'أداء التوصيات', icon: BarChart3 },
     { id: 'analysis', label: 'تحليلات اليوم', icon: TrendingUp },
     { id: 'notifications', label: 'التنبيهات', icon: Bell },
+    { id: 'subscriptions', label: 'الباقات', icon: Crown },
     { id: 'profile', label: 'الحساب', icon: User },
   ];
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   // Close search when clicking outside
   useEffect(() => {
@@ -114,6 +120,13 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                 <span className="text-sm font-medium">{item.label}</span>
               </button>
             ))}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm font-medium">خروج</span>
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -147,6 +160,13 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
                 <span>{item.label}</span>
               </button>
             ))}
+            <button
+              onClick={handleLogout}
+              className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-base font-medium text-gray-300 hover:bg-red-600 hover:text-white transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>خروج</span>
+            </button>
           </div>
         </div>
       )}
