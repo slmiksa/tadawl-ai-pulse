@@ -82,13 +82,67 @@ function generateFallbackStocks(allSymbols: string[], market: string, existingSt
   return fallbackStocks;
 }
 
-// Background refresh function - limited API calls
+// Background refresh function - get more stocks
 async function refreshStocksInBackground(market: string, stockSymbols: string[]) {
   try {
     console.log('Background refresh started for', market);
     
-    // Only try 3 API calls to conserve credits
-    const limitedSymbols = stockSymbols.slice(0, 3);
+    // Try time-series first for multiple stocks at once
+    try {
+      const timeSeriesUrl = `${BASE_URL}/time_series?symbol=${stockSymbols.slice(0, 30).join(',')}&interval=1day&outputsize=1&apikey=${TWELVEDATA_API_KEY}`;
+      const response = await fetch(timeSeriesUrl);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Time-series API response for', stockSymbols.slice(0, 30).length, 'stocks');
+        
+        if (data && !data.code && !data.message) {
+          const stocks = Array.isArray(data) ? data : [data];
+          const processedStocks = [];
+          
+          for (const stock of stocks) {
+            if (stock.meta && stock.values && stock.values.length > 0) {
+              const latestValue = stock.values[0];
+              const prevValue = stock.values[1] || latestValue;
+              
+              const currentPrice = parseFloat(latestValue.close);
+              const prevPrice = parseFloat(prevValue.close);
+              const change = currentPrice - prevPrice;
+              const changePercent = (change / prevPrice) * 100;
+              
+              processedStocks.push({
+                symbol: stock.meta.symbol,
+                name: stock.meta.symbol,
+                price: currentPrice,
+                change: change,
+                changePercent: changePercent,
+                volume: parseInt(latestValue.volume || '1000000'),
+                high: parseFloat(latestValue.high),
+                low: parseFloat(latestValue.low),
+                open: parseFloat(latestValue.open),
+                timestamp: new Date().toISOString(),
+                market: market === 'saudi' ? 'saudi' : 'us',
+                recommendation: change > 0 ? 'buy' : change < 0 ? 'sell' : 'hold',
+                reason: change > 0 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                       change < 0 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                       'حركة جانبية للسهم، ننصح بالانتظار'
+              });
+            }
+          }
+          
+          if (processedStocks.length > 0) {
+            await saveStocksToDatabase(processedStocks);
+            console.log('Saved', processedStocks.length, 'stocks from time-series API');
+            return;
+          }
+        }
+      }
+    } catch (timeSeriesError) {
+      console.log('Time-series failed, trying individual quotes...');
+    }
+    
+    // Fallback to individual quotes for more stocks
+    const limitedSymbols = stockSymbols.slice(0, 20);
     
     for (const stockSymbol of limitedSymbols) {
       try {
@@ -152,14 +206,18 @@ async function fetchFromApiWithFallback(market: string) {
     let stockSymbols = [];
     if (market === 'us') {
       stockSymbols = [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 'INTC',
-        'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 'ROKU',
-        'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN', 'TWLO',
-        'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
+        'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD', 
+        'INTC', 'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM', 
+        'ROKU', 'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN',
+        'TWLO', 'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'USB', 'PNC', 'TFC', 'COF',
         'JNJ', 'PFE', 'UNH', 'ABT', 'MRK', 'ABBV', 'CVS', 'LLY', 'TMO', 'DHR',
         'KO', 'PEP', 'WMT', 'HD', 'MCD', 'DIS', 'NKE', 'SBUX', 'LOW', 'TGT',
         'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'PXD', 'MPC', 'VLO', 'PSX', 'HES',
-        'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX'
+        'CAT', 'DE', 'MMM', 'HON', 'UPS', 'FDX', 'LMT', 'BA', 'GD', 'RTX',
+        'V', 'MA', 'BRK.B', 'AVGO', 'COST', 'TXN', 'ACN', 'NOW', 'QCOM', 'MU',
+        'ASML', 'TSM', 'CSCO', 'IBM', 'BABA', 'WBA', 'UNP', 'NSC', 'CSX', 'SPGI',
+        'CL', 'PG', 'MDLZ', 'PM', 'T', 'VZ', 'CMCSA', 'DIS', 'CHTR', 'TMUS',
+        'NEE', 'SO', 'D', 'EXC', 'DUK', 'AEP', 'XEL', 'PCG', 'SRE', 'EIX'
       ];
     } else if (market === 'saudi') {
       stockSymbols = [
@@ -167,12 +225,20 @@ async function fetchFromApiWithFallback(market: string) {
         '2020.SR', '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR',
         '1020.SR', '1030.SR', '1060.SR', '1080.SR', '1140.SR', '1150.SR', '1160.SR', '1183.SR',
         '1201.SR', '1202.SR', '1211.SR', '1214.SR', '1301.SR', '1302.SR', '1320.SR', '1321.SR',
-        '2001.SR', '2002.SR', '2040.SR', '2050.SR', '2070.SR', '2080.SR', '2100.SR', '2110.SR'
+        '2001.SR', '2002.SR', '2040.SR', '2050.SR', '2070.SR', '2080.SR', '2100.SR', '2110.SR',
+        '4001.SR', '4003.SR', '4004.SR', '4005.SR', '4006.SR', '4007.SR', '4008.SR', '4009.SR',
+        '4010.SR', '4011.SR', '4012.SR', '4013.SR', '4014.SR', '4015.SR', '4016.SR', '4017.SR',
+        '4018.SR', '4019.SR', '4020.SR', '4021.SR', '4022.SR', '4023.SR', '4024.SR', '4025.SR',
+        '3001.SR', '3002.SR', '3003.SR', '3004.SR', '3005.SR', '3010.SR', '3020.SR', '3030.SR',
+        '3040.SR', '3050.SR', '3060.SR', '3080.SR', '3090.SR', '6001.SR', '6002.SR', '6010.SR'
       ];
     } else {
       stockSymbols = [
-        'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX',
-        '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '1210.SR'
+        'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'TSLA', 'META', 'NVDA', 'NFLX', 'AMD',
+        'INTC', 'CRM', 'ORCL', 'ADBE', 'PYPL', 'SHOP', 'SPOT', 'UBER', 'LYFT', 'ZM',
+        'ROKU', 'SQ', 'SNAP', 'PINS', 'DOCU', 'OKTA', 'SNOW', 'PLTR', 'RBLX', 'COIN',
+        '2222.SR', '2010.SR', '1120.SR', '2030.SR', '2380.SR', '1210.SR', '4030.SR', '2020.SR',
+        '1180.SR', '1050.SR', '2060.SR', '2090.SR', '4002.SR', '8230.SR', '2170.SR', '4001.SR'
       ];
     }
     
