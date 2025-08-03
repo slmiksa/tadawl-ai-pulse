@@ -122,7 +122,17 @@ const TodayAnalysis: React.FC = () => {
     return 'ضعيفة';
   };
 
-  const topOpportunities = getTopOpportunities();
+
+  const getMarketStatus = (status: string) => {
+    switch (status) {
+      case 'open':
+        return { text: 'مفتوح', color: 'text-green-400' };
+      case 'closed':
+        return { text: 'مغلق', color: 'text-red-400' };
+      default:
+        return { text: 'غير محدد', color: 'text-gray-400' };
+    }
+  };
 
   // Real system updates based on actual data
   const getSystemUpdates = () => {
@@ -153,19 +163,6 @@ const TodayAnalysis: React.FC = () => {
     ];
   };
 
-  const systemUpdates = getSystemUpdates();
-
-  const getMarketStatus = (status: string) => {
-    switch (status) {
-      case 'open':
-        return { text: 'مفتوح', color: 'text-green-400' };
-      case 'closed':
-        return { text: 'مغلق', color: 'text-red-400' };
-      default:
-        return { text: 'غير محدد', color: 'text-gray-400' };
-    }
-  };
-
   const getStrengthColor = (strength: string) => {
     switch (strength) {
       case 'قوية':
@@ -179,6 +176,8 @@ const TodayAnalysis: React.FC = () => {
     }
   };
 
+  const systemUpdates = getSystemUpdates();
+  const topOpportunities = getTopOpportunities();
   const isLoading = usLoading || saudiLoading;
 
   return (
