@@ -31,7 +31,118 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // For 'all' market, we need to fetch both US and Saudi stocks separately and combine them
+  const handleAllMarketFetch = async (forceRefresh = false) => {
+    const now = Date.now();
+    
+    // Check if we have valid cached data for 'all'
+    const cachedData = stocksCache.get('all');
+    if (cachedData && !forceRefresh) {
+      const timeSinceCache = now - cachedData.timestamp;
+      
+      if (timeSinceCache < CACHE_DURATION) {
+        console.log(`Using memory cache for all (${Math.round(timeSinceCache / 1000)}s old)`);
+        setStocks(cachedData.data);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+    }
+
+    if (!cachedData) {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      // Fetch both US and Saudi stocks from database
+      const [usResult, saudiResult] = await Promise.all([
+        supabase.from('stocks').select('*').eq('market', 'us').order('symbol'),
+        supabase.from('stocks').select('*').eq('market', 'saudi').order('symbol')
+      ]);
+
+      let combinedStocks: Stock[] = [];
+      
+      if ((usResult.data && usResult.data.length > 0) || (saudiResult.data && saudiResult.data.length > 0)) {
+        const allStocksData = [...(usResult.data || []), ...(saudiResult.data || [])];
+        
+        combinedStocks = allStocksData.map(stock => ({
+          symbol: stock.symbol,
+          name: stock.name,
+          price: Number(stock.price || 0),
+          change: Number(stock.change || 0),
+          changePercent: Number(stock.change_percent || 0),
+          volume: Number(stock.volume || 0),
+          high: Number(stock.high || stock.price || 0),
+          low: Number(stock.low || stock.price || 0),
+          open: Number(stock.open || stock.price || 0),
+          timestamp: stock.last_updated || new Date().toISOString(),
+          market: (stock.market === 'us' || stock.market === 'saudi') ? stock.market : 'us' as 'us' | 'saudi',
+          recommendation: (stock.recommendation === 'buy' || stock.recommendation === 'sell' || stock.recommendation === 'hold') ? stock.recommendation : 'hold' as 'buy' | 'sell' | 'hold',
+          reason: stock.reason || 'لا توجد توصية متاحة'
+        }));
+
+        // Check if database data is fresh
+        const allStocks = [...(usResult.data || []), ...(saudiResult.data || [])];
+        if (allStocks.length > 0) {
+          const newestStock = allStocks.reduce((newest, stock) => {
+            const stockTime = new Date(stock.last_updated || 0).getTime();
+            const newestTime = new Date(newest.last_updated || 0).getTime();
+            return stockTime > newestTime ? stock : newest;
+          }, allStocks[0]);
+          
+          const dataAge = now - new Date(newestStock.last_updated || 0).getTime();
+          const isFreshData = dataAge < CACHE_DURATION;
+          
+          // Update cache
+          const cacheTimestamp = isFreshData ? now : (cachedData?.timestamp || now - CACHE_DURATION + 30000);
+          
+          stocksCache.set('all', {
+            data: combinedStocks,
+            timestamp: cacheTimestamp,
+            lastDbCheck: now
+          });
+          
+          setStocks(combinedStocks);
+          console.log(`Updated cache for all with ${combinedStocks.length} stocks (data age: ${Math.round(dataAge / 1000)}s)`);
+          
+          // If database data is stale, trigger background refresh
+          if (!isFreshData && !forceRefresh) {
+            console.log('Database data is stale, triggering background refresh...');
+            setTimeout(() => fetchFromAPI(false), 100);
+          }
+        } else {
+          // No valid data in either database result
+          setStocks(combinedStocks);
+          console.log(`Updated cache for all with ${combinedStocks.length} stocks (no valid timestamps)`);
+        }
+      } else {
+        // No database data, fetch from API
+        console.log('No database data found, fetching from API...');
+        await fetchFromAPI(!cachedData);
+      }
+    } catch (err) {
+      console.error('Error fetching all stocks:', err);
+      
+      if (cachedData) {
+        console.log('Database error, falling back to cached data');
+        setStocks(cachedData.data);
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch stocks data';
+        setError(`خطأ في جلب البيانات: ${errorMessage}`);
+        setStocks([]);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchStocks = async (forceRefresh = false) => {
+    // Handle 'all' market separately
+    if (market === 'all') {
+      return handleAllMarketFetch(forceRefresh);
+    }
+
     const cacheKey = market;
     const now = Date.now();
     
@@ -68,13 +179,11 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
 
     try {
       // Check database for fresh data
-      let query = supabase.from('stocks').select('*');
-      
-      if (market !== 'all') {
-        query = query.eq('market', market);
-      }
-      
-      const { data: stocksData, error: dbError } = await query.order('symbol');
+      const { data: stocksData, error: dbError } = await supabase
+        .from('stocks')
+        .select('*')
+        .eq('market', market)
+        .order('symbol');
       
       if (stocksData && stocksData.length > 0 && !dbError) {
         const transformedStocks = stocksData.map(stock => ({
