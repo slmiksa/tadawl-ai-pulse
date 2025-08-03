@@ -40,6 +40,9 @@ const StockDetails: React.FC<StockDetailsProps> = ({
   const currentChangePercent = quote?.changePercent ?? changePercent;
   const isPositive = currentChange >= 0;
   const marketLabel = market === 'us' ? 'السوق الأمريكي' : 'السوق السعودي';
+  const usdToSar = 3.75; // سعر صرف تقريبي
+  const priceInSar = currentPrice * usdToSar;
+  const priceInUsd = market === 'saudi' ? currentPrice / usdToSar : currentPrice;
 
   const getRecommendationColor = (rec: string) => {
     switch (rec) {
@@ -217,7 +220,9 @@ const StockDetails: React.FC<StockDetailsProps> = ({
             {/* Price Section */}
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-                <span className="text-3xl sm:text-4xl font-bold text-white">${currentPrice.toFixed(2)}</span>
+                <span className="text-3xl sm:text-4xl font-bold text-white">
+                  {market === 'us' ? `$${currentPrice.toFixed(2)}` : `${currentPrice.toFixed(2)} ريال`}
+                </span>
                 <div className={cn(
                   "flex items-center space-x-2 px-3 py-1 rounded-lg w-fit",
                   isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
@@ -227,6 +232,9 @@ const StockDetails: React.FC<StockDetailsProps> = ({
                     {isPositive ? '+' : ''}{currentChange.toFixed(2)} ({currentChangePercent.toFixed(2)}%)
                   </span>
                 </div>
+              </div>
+              <div className="text-sm text-gray-400 mb-1">
+                {market === 'us' ? `≈ ${priceInSar.toFixed(2)} ريال سعودي` : `≈ $${priceInUsd.toFixed(2)} دولار أمريكي`}
               </div>
               <div className="text-xs sm:text-sm text-gray-400">
                 آخر تحديث: {quote?.timestamp ? new Date(quote.timestamp).toLocaleString('ar-SA') : new Date().toLocaleTimeString('ar-SA')}

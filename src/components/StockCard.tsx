@@ -32,6 +32,9 @@ const StockCard: React.FC<StockCardProps> = ({
 }) => {
   const isPositive = change >= 0;
   const marketLabel = market === 'us' ? 'أمريكي' : 'سعودي';
+  const usdToSar = 3.75; // سعر صرف تقريبي
+  const priceInSar = price * usdToSar;
+  const priceInUsd = market === 'saudi' ? price / usdToSar : price;
 
   const getRecommendationColor = (rec: string) => {
     switch (rec) {
@@ -103,12 +106,17 @@ const StockCard: React.FC<StockCardProps> = ({
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <span className="text-2xl font-bold text-white">
-            ${price.toFixed(2)}
-          </span>
+        <div className="flex flex-col space-y-1">
+          <div className="flex items-center space-x-2">
+            <span className="text-2xl font-bold text-white">
+              {market === 'us' ? `$${price.toFixed(2)}` : `${price.toFixed(2)} ريال`}
+            </span>
+          </div>
+          <div className="text-sm text-gray-400">
+            {market === 'us' ? `≈ ${priceInSar.toFixed(2)} ريال` : `≈ $${priceInUsd.toFixed(2)}`}
+          </div>
           <div className={cn(
-            "flex items-center space-x-1 px-2 py-1 rounded",
+            "flex items-center space-x-1 px-2 py-1 rounded w-fit",
             isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           )}>
             {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}

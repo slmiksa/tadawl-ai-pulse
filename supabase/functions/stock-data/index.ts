@@ -247,8 +247,100 @@ async function fetchFromApiWithFallback(market: string) {
     // Use time-series endpoint to fetch all symbols in one request
     console.log(`Fetching data for ${stockSymbols.length} ${market} stocks...`);
     
-    const timeSeriesUrl = `${BASE_URL}/time_series?symbol=${stockSymbols.join(',')}&interval=1min&outputsize=1&apikey=${TWELVEDATA_API_KEY}`;
-    const response = await fetch(timeSeriesUrl);
+    // Try to get all stocks using time-series with multiple symbols
+    const symbolBatches = [];
+    for (let i = 0; i < stockSymbols.length; i += 8) {
+      symbolBatches.push(stockSymbols.slice(i, i + 8));
+    }
+    
+    for (const batch of symbolBatches) {
+      try {
+        const timeSeriesUrl = `${BASE_URL}/time_series?symbol=${batch.join(',')}&interval=1day&outputsize=1&apikey=${TWELVEDATA_API_KEY}`;
+        const response = await fetch(timeSeriesUrl);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Handle batch response
+          if (typeof data === 'object' && data !== null) {
+            // Single symbol response
+            if (data.values && data.meta) {
+              const latestData = data.values[0];
+              if (latestData && data.meta.symbol) {
+                const price = parseFloat(latestData.close);
+                const open = parseFloat(latestData.open);
+                const change = price - open;
+                const changePercent = (change / open) * 100;
+                
+                freshStocks.push({
+                  symbol: data.meta.symbol,
+                  name: data.meta.symbol,
+                  price: price,
+                  change: change,
+                  changePercent: changePercent,
+                  volume: parseInt(latestData.volume || '0'),
+                  high: parseFloat(latestData.high),
+                  low: parseFloat(latestData.low),
+                  open: open,
+                  timestamp: latestData.datetime,
+                  market: data.meta.symbol.endsWith('.SR') ? 'saudi' : 'us',
+                  recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                  reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                         change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                         'حركة جانبية للسهم، ننصح بالانتظار'
+                });
+              }
+            }
+            // Multiple symbols response
+            else if (!data.values && !data.meta) {
+              for (const [symbol, stockData] of Object.entries(data)) {
+                if (stockData && typeof stockData === 'object' && (stockData as any).values) {
+                  const latestData = (stockData as any).values[0];
+                  if (latestData) {
+                    const price = parseFloat(latestData.close);
+                    const open = parseFloat(latestData.open);
+                    const change = price - open;
+                    const changePercent = (change / open) * 100;
+                    
+                    freshStocks.push({
+                      symbol: symbol,
+                      name: symbol,
+                      price: price,
+                      change: change,
+                      changePercent: changePercent,
+                      volume: parseInt(latestData.volume || '0'),
+                      high: parseFloat(latestData.high),
+                      low: parseFloat(latestData.low),
+                      open: open,
+                      timestamp: latestData.datetime,
+                      market: symbol.endsWith('.SR') ? 'saudi' : 'us',
+                      recommendation: change > 1 ? 'buy' : change < -1 ? 'sell' : 'hold',
+                      reason: change > 1 ? 'اتجاه صاعد إيجابي مع زيادة في الأسعار' : 
+                             change < -1 ? 'ضغط هبوطي على السهم مع تراجع في الأسعار' : 
+                             'حركة جانبية للسهم، ننصح بالانتظار'
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 50)); // Small delay between requests
+      } catch (batchError) {
+        console.log('Batch API call failed:', batchError);
+      }
+    }
+    
+    console.log(`Fetched ${freshStocks.length} stocks from API`);
+    
+    if (freshStocks.length > 0) {
+      await saveStocksToDatabase(freshStocks);
+      return freshStocks;
+    }
+    
+    // Fallback if API fails completely
+    console.log('API failed completely, generating comprehensive fallback data...');
     
     if (response.ok) {
       const data = await response.json();
