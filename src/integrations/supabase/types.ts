@@ -236,11 +236,14 @@ export type Database = {
           change_percent: number | null
           created_at: string | null
           dividend_yield: number | null
+          entry_signal: string | null
+          entry_timing: string | null
           high: number | null
           id: string
           industry: string | null
           last_updated: string | null
           low: number | null
+          macd_signal: string | null
           market: string
           market_cap: number | null
           name: string
@@ -249,8 +252,17 @@ export type Database = {
           price: number | null
           reason: string | null
           recommendation: string | null
+          resistance_level_1: number | null
+          resistance_level_2: number | null
+          rsi: number | null
           sector: string | null
+          success_probability: number | null
+          support_level_1: number | null
+          support_level_2: number | null
           symbol: string
+          trading_volume_avg: number | null
+          trend_strength: string | null
+          volatility: number | null
           volume: number | null
         }
         Insert: {
@@ -258,11 +270,14 @@ export type Database = {
           change_percent?: number | null
           created_at?: string | null
           dividend_yield?: number | null
+          entry_signal?: string | null
+          entry_timing?: string | null
           high?: number | null
           id?: string
           industry?: string | null
           last_updated?: string | null
           low?: number | null
+          macd_signal?: string | null
           market: string
           market_cap?: number | null
           name: string
@@ -271,8 +286,17 @@ export type Database = {
           price?: number | null
           reason?: string | null
           recommendation?: string | null
+          resistance_level_1?: number | null
+          resistance_level_2?: number | null
+          rsi?: number | null
           sector?: string | null
+          success_probability?: number | null
+          support_level_1?: number | null
+          support_level_2?: number | null
           symbol: string
+          trading_volume_avg?: number | null
+          trend_strength?: string | null
+          volatility?: number | null
           volume?: number | null
         }
         Update: {
@@ -280,11 +304,14 @@ export type Database = {
           change_percent?: number | null
           created_at?: string | null
           dividend_yield?: number | null
+          entry_signal?: string | null
+          entry_timing?: string | null
           high?: number | null
           id?: string
           industry?: string | null
           last_updated?: string | null
           low?: number | null
+          macd_signal?: string | null
           market?: string
           market_cap?: number | null
           name?: string
@@ -293,8 +320,17 @@ export type Database = {
           price?: number | null
           reason?: string | null
           recommendation?: string | null
+          resistance_level_1?: number | null
+          resistance_level_2?: number | null
+          rsi?: number | null
           sector?: string | null
+          success_probability?: number | null
+          support_level_1?: number | null
+          support_level_2?: number | null
           symbol?: string
+          trading_volume_avg?: number | null
+          trend_strength?: string | null
+          volatility?: number | null
           volume?: number | null
         }
         Relationships: []

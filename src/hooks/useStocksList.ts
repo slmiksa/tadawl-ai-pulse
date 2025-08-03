@@ -24,6 +24,19 @@ interface Stock {
   market: 'us' | 'saudi';
   recommendation: 'buy' | 'sell' | 'hold';
   reason: string;
+  // Technical Analysis Fields
+  resistanceLevel1?: number;
+  resistanceLevel2?: number;
+  supportLevel1?: number;
+  supportLevel2?: number;
+  entrySignal?: string;
+  entryTiming?: string;
+  rsi?: number;
+  macdSignal?: string;
+  tradingVolumeAvg?: number;
+  volatility?: number;
+  trendStrength?: string;
+  successProbability?: number;
 }
 
 export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
@@ -84,7 +97,20 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
           timestamp: stock.last_updated || new Date().toISOString(),
           market: (stock.market === 'us' || stock.market === 'saudi') ? stock.market : 'us' as 'us' | 'saudi',
           recommendation: (stock.recommendation === 'buy' || stock.recommendation === 'sell' || stock.recommendation === 'hold') ? stock.recommendation : 'hold' as 'buy' | 'sell' | 'hold',
-          reason: stock.reason || 'لا توجد توصية متاحة'
+          reason: stock.reason || 'لا توجد توصية متاحة',
+          // Technical Analysis fields
+          resistanceLevel1: stock.resistance_level_1 ? Number(stock.resistance_level_1) : undefined,
+          resistanceLevel2: stock.resistance_level_2 ? Number(stock.resistance_level_2) : undefined,
+          supportLevel1: stock.support_level_1 ? Number(stock.support_level_1) : undefined,
+          supportLevel2: stock.support_level_2 ? Number(stock.support_level_2) : undefined,
+          entrySignal: stock.entry_signal || undefined,
+          entryTiming: stock.entry_timing || undefined,
+          rsi: stock.rsi ? Number(stock.rsi) : undefined,
+          macdSignal: stock.macd_signal || undefined,
+          tradingVolumeAvg: stock.trading_volume_avg ? Number(stock.trading_volume_avg) : undefined,
+          volatility: stock.volatility ? Number(stock.volatility) : undefined,
+          trendStrength: stock.trend_strength || undefined,
+          successProbability: stock.success_probability ? Number(stock.success_probability) : undefined
         }));
 
         // Check data freshness
@@ -259,7 +285,20 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
           timestamp: stock.last_updated || new Date().toISOString(),
           market: (stock.market === 'us' || stock.market === 'saudi') ? stock.market : 'us' as 'us' | 'saudi',
           recommendation: (stock.recommendation === 'buy' || stock.recommendation === 'sell' || stock.recommendation === 'hold') ? stock.recommendation : 'hold' as 'buy' | 'sell' | 'hold',
-          reason: stock.reason || 'لا توجد توصية متاحة'
+          reason: stock.reason || 'لا توجد توصية متاحة',
+          // Technical Analysis fields
+          resistanceLevel1: stock.resistance_level_1 ? Number(stock.resistance_level_1) : undefined,
+          resistanceLevel2: stock.resistance_level_2 ? Number(stock.resistance_level_2) : undefined,
+          supportLevel1: stock.support_level_1 ? Number(stock.support_level_1) : undefined,
+          supportLevel2: stock.support_level_2 ? Number(stock.support_level_2) : undefined,
+          entrySignal: stock.entry_signal || undefined,
+          entryTiming: stock.entry_timing || undefined,
+          rsi: stock.rsi ? Number(stock.rsi) : undefined,
+          macdSignal: stock.macd_signal || undefined,
+          tradingVolumeAvg: stock.trading_volume_avg ? Number(stock.trading_volume_avg) : undefined,
+          volatility: stock.volatility ? Number(stock.volatility) : undefined,
+          trendStrength: stock.trend_strength || undefined,
+          successProbability: stock.success_probability ? Number(stock.success_probability) : undefined
         }));
 
         // Check if database data is fresh (less than 3 minutes old)

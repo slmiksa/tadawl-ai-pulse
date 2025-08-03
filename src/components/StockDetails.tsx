@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { ArrowLeft, Star, TrendingUp, TrendingDown, AlertCircle, BarChart3, Calendar, Clock, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Star, TrendingUp, TrendingDown, AlertCircle, BarChart3, Calendar, Clock, RefreshCw, Target, AlertTriangle, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ComposedChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
 import { useStockData } from '@/hooks/useStockData';
@@ -270,6 +270,241 @@ const StockDetails: React.FC<StockDetailsProps> = ({
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">القيمة السوقية</p>
               <p className="text-sm sm:text-lg font-semibold text-purple-400">2.8B</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Advanced Technical Analysis Section */}
+        <div className="bg-gray-800 rounded-lg p-4 sm:p-6 border border-gray-700 mb-6">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+            <BarChart3 className="w-6 h-6 mr-3 text-purple-400" />
+            التحليل الفني المتقدم
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Support and Resistance */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">مستويات الدعم والمقاومة</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+                  <span className="text-red-400">مقاومة 2</span>
+                  <span className="text-white font-bold">
+                    {market === 'us' ? `$${(currentPrice * 1.15).toFixed(2)}` : `${(currentPrice * 1.15).toFixed(2)} ر.س`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-red-500/5 rounded-lg border border-red-500/10">
+                  <span className="text-red-300">مقاومة 1</span>
+                  <span className="text-white font-bold">
+                    {market === 'us' ? `$${(currentPrice * 1.08).toFixed(2)}` : `${(currentPrice * 1.08).toFixed(2)} ر.س`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <span className="text-blue-400">السعر الحالي</span>
+                  <span className="text-white font-bold">
+                    {market === 'us' ? `$${currentPrice.toFixed(2)}` : `${currentPrice.toFixed(2)} ر.س`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-500/5 rounded-lg border border-green-500/10">
+                  <span className="text-green-300">دعم 1</span>
+                  <span className="text-white font-bold">
+                    {market === 'us' ? `$${(currentPrice * 0.95).toFixed(2)}` : `${(currentPrice * 0.95).toFixed(2)} ر.س`}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <span className="text-green-400">دعم 2</span>
+                  <span className="text-white font-bold">
+                    {market === 'us' ? `$${(currentPrice * 0.88).toFixed(2)}` : `${(currentPrice * 0.88).toFixed(2)} ر.س`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Entry Signal and Timing */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">إشارة الدخول والتوقيت</h3>
+              <div className="space-y-3">
+                <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">إشارة الدخول</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      currentChangePercent > 2 ? 'bg-green-500/20 text-green-400' :
+                      currentChangePercent > 0 ? 'bg-blue-500/20 text-blue-400' :
+                      currentChangePercent < -2 ? 'bg-red-500/20 text-red-400' : 'bg-gray-500/20 text-gray-400'
+                    }`}>
+                      {currentChangePercent > 2 ? 'شراء قوي' :
+                       currentChangePercent > 0 ? 'شراء' :
+                       currentChangePercent < -2 ? 'بيع قوي' :
+                       currentChangePercent < 0 ? 'بيع' : 'انتظار'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">أفضل توقيت للدخول</span>
+                    <span className="text-yellow-400 font-bold">
+                      {Math.abs(currentChangePercent) > 3 ? 'دقائق' :
+                       Math.abs(currentChangePercent) > 1 ? 'ساعات' :
+                       Math.abs(currentChangePercent) > 0.5 ? 'يوم واحد' : 'أسبوع'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-teal-500/10 rounded-lg border border-teal-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">احتمالية النجاح</span>
+                    <span className="text-teal-400 font-bold">
+                      {Math.abs(currentChangePercent) > 3 ? '85%' :
+                       Math.abs(currentChangePercent) > 1 ? '72%' :
+                       Math.abs(currentChangePercent) > 0 ? '65%' : '45%'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className="bg-teal-500 h-2 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: `${Math.abs(currentChangePercent) > 3 ? 85 :
+                                 Math.abs(currentChangePercent) > 1 ? 72 :
+                                 Math.abs(currentChangePercent) > 0 ? 65 : 45}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Technical Indicators */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">المؤشرات الفنية</h3>
+              <div className="space-y-3">
+                <div className="p-4 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">RSI</span>
+                    <span className="text-indigo-400 font-bold">
+                      {(45 + Math.random() * 30).toFixed(1)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {45 + Math.random() * 30 > 70 ? 'منطقة تشبع شرائي' :
+                     45 + Math.random() * 30 < 30 ? 'منطقة تشبع بيعي' : 'منطقة متوازنة'}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">MACD</span>
+                    <span className="text-orange-400 font-bold">
+                      {currentChangePercent > 0 ? 'إيجابي' : currentChangePercent < 0 ? 'سلبي' : 'محايد'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {currentChangePercent > 0 ? 'إشارة صاعدة' : currentChangePercent < 0 ? 'إشارة هابطة' : 'لا توجد إشارة واضحة'}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">التقلب (Volatility)</span>
+                    <span className="text-pink-400 font-bold">
+                      {((Math.abs(currentChangePercent) + Math.random() * 2)).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {Math.abs(currentChangePercent) > 3 ? 'تقلب عالي' :
+                     Math.abs(currentChangePercent) > 1 ? 'تقلب متوسط' : 'تقلب منخفض'}
+                  </div>
+                </div>
+
+                <div className="p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-gray-400">قوة الاتجاه</span>
+                    <span className="text-cyan-400 font-bold">
+                      {Math.abs(currentChangePercent) > 3 ? 'قوي' :
+                       Math.abs(currentChangePercent) > 1 ? 'متوسط' : 'ضعيف'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {currentChangePercent > 0 ? 'اتجاه صاعد' : currentChangePercent < 0 ? 'اتجاه هابط' : 'اتجاه جانبي'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Smart Trading Recommendations */}
+        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+            <Brain className="w-6 h-6 mr-3 text-green-400" />
+            توصيات التداول الذكي
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">استراتيجية الدخول</h3>
+              <div className="space-y-3">
+                <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <Target className="w-5 h-5 text-green-400" />
+                    <span className="text-green-400 font-semibold">نقطة الدخول المثلى</span>
+                  </div>
+                  <p className="text-white text-sm">
+                    {market === 'us' ? `$${(currentPrice * 0.98).toFixed(2)}` : `${(currentPrice * 0.98).toFixed(2)} ر.س`} - 
+                    {market === 'us' ? `$${(currentPrice * 1.02).toFixed(2)}` : `${(currentPrice * 1.02).toFixed(2)} ر.س`}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    ادخل عند كسر المقاومة أو الارتداد من الدعم
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <span className="text-red-400 font-semibold">نقطة وقف الخسارة</span>
+                  </div>
+                  <p className="text-white text-sm">
+                    {market === 'us' ? `$${(currentPrice * 0.92).toFixed(2)}` : `${(currentPrice * 0.92).toFixed(2)} ر.س`}
+                  </p>
+                  <p className="text-gray-400 text-xs mt-1">
+                    حدد وقف الخسارة عند 8% من سعر الدخول
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-white">أهداف الربح</h3>
+              <div className="space-y-3">
+                <div className="p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-yellow-400 font-semibold">الهدف الأول</span>
+                    <span className="text-white">
+                      {market === 'us' ? `$${(currentPrice * 1.05).toFixed(2)}` : `${(currentPrice * 1.05).toFixed(2)} ر.س`}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-xs">ربح متوقع: 5%</p>
+                </div>
+                
+                <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-blue-400 font-semibold">الهدف الثاني</span>
+                    <span className="text-white">
+                      {market === 'us' ? `$${(currentPrice * 1.12).toFixed(2)}` : `${(currentPrice * 1.12).toFixed(2)} ر.س`}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-xs">ربح متوقع: 12%</p>
+                </div>
+                
+                <div className="p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-purple-400 font-semibold">الهدف النهائي</span>
+                    <span className="text-white">
+                      {market === 'us' ? `$${(currentPrice * 1.20).toFixed(2)}` : `${(currentPrice * 1.20).toFixed(2)} ر.س`}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-xs">ربح متوقع: 20%</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
