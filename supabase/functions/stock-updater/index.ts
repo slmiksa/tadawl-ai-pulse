@@ -162,9 +162,11 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
   
   try {
     const cleanSymbol = symbol.replace('.SR', '.SAU');
-    const url = `https://api.twelvedata.com/quote?symbol=${cleanSymbol}&apikey=${apiKey}`;
+    // Use USD currency for US stocks and SAR for Saudi stocks
+    const currency = symbol.endsWith('.SR') ? 'SAR' : 'USD';
+    const url = `https://api.twelvedata.com/quote?symbol=${cleanSymbol}&apikey=${apiKey}&currency=${currency}`;
     
-    console.log(`Fetching real data for ${symbol} from API...`);
+    console.log(`Fetching real data for ${symbol} in ${currency} from API...`);
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -187,9 +189,10 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     
     const price = parseFloat(data.close || data.price || '0');
     
-    // Validate price is reasonable
-    if (price <= 0 || price > 100000) {
-      console.log(`❌ Invalid price for ${symbol}: ${price}`);
+    // Validate price is reasonable for the currency
+    const maxPrice = currency === 'USD' ? 10000 : 1000; // Higher limit for USD
+    if (price <= 0 || price > maxPrice) {
+      console.log(`❌ Invalid price for ${symbol}: ${price} ${currency}`);
       return null;
     }
     
@@ -203,7 +206,7 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     // Generate technical analysis for real data
     const technicalAnalysis = generateTechnicalAnalysis(symbol, price, changePercent, volume, high, low);
     
-    console.log(`✅ Real data validated for ${symbol}: $${price} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
+    console.log(`✅ Real data validated for ${symbol}: ${price} ${currency} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
     
     return {
       symbol: symbol,
@@ -212,8 +215,8 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
       change: Number(change.toFixed(2)),
       changePercent: Number(changePercent.toFixed(2)),
       volume,
-      high,
-      low,
+      high: Number(high.toFixed(2)),
+      low: Number(low.toFixed(2)),
       open: parseFloat(data.open || price.toString()),
       ...technicalAnalysis
     };

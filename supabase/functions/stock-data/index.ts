@@ -354,19 +354,63 @@ serve(async (req) => {
         );
 
       case 'timeseries':
-        // Generate realistic candlestick data
+        try {
+          // Try to get real candlestick data
+          const interval = '5min';
+          const outputsize = 48;
+          const timeseriesUrl = `${BASE_URL}/time_series?symbol=${symbol}&interval=${interval}&outputsize=${outputsize}&apikey=${TWELVEDATA_API_KEY}`;
+          
+          const response = await fetch(timeseriesUrl);
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data && data.values && Array.isArray(data.values)) {
+              const candlestickData = data.values.reverse().map((item: any) => ({
+                time: new Date(item.datetime).toLocaleTimeString('ar-SA', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                }),
+                open: Number(parseFloat(item.open).toFixed(2)),
+                high: Number(parseFloat(item.high).toFixed(2)),
+                low: Number(parseFloat(item.low).toFixed(2)),
+                close: Number(parseFloat(item.close).toFixed(2)),
+                volume: parseInt(item.volume || '0')
+              }));
+              
+              return new Response(
+                JSON.stringify({ candlestickData }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+        } catch (error) {
+          console.log('Timeseries API failed, using enhanced fallback');
+        }
+        
+        // Enhanced realistic candlestick fallback
         const basePrice = REALISTIC_STOCK_DATA[symbol]?.price || 100;
-        const candlestickData = Array.from({ length: 20 }, (_, i) => {
-          const variance = (Math.random() - 0.5) * 5;
-          const open = basePrice + variance;
-          const close = open + (Math.random() - 0.5) * 3;
-          const high = Math.max(open, close) + Math.random() * 2;
-          const low = Math.min(open, close) - Math.random() * 2;
+        const candlestickData = Array.from({ length: 48 }, (_, i) => {
+          const timeStamp = new Date(Date.now() - (47 - i) * 5 * 60 * 1000); // 5-minute intervals
+          
+          // Create realistic price movement
+          const volatility = 0.02;
+          const trend = (Math.random() - 0.5) * 0.01;
+          const noise = (Math.random() - 0.5) * volatility;
+          
+          const open = basePrice + (Math.random() - 0.5) * 5;
+          const changePercent = trend + noise;
+          const close = open * (1 + changePercent);
+          
+          const wickSize = Math.random() * 0.01;
+          const high = Math.max(open, close) * (1 + wickSize);
+          const low = Math.min(open, close) * (1 - wickSize);
           
           return {
-            time: new Date(Date.now() - (19 - i) * 30 * 60 * 1000).toLocaleTimeString('ar-SA', { 
+            time: timeStamp.toLocaleTimeString('ar-SA', { 
               hour: '2-digit', 
-              minute: '2-digit' 
+              minute: '2-digit',
+              hour12: false
             }),
             open: Number(open.toFixed(2)),
             high: Number(high.toFixed(2)),
