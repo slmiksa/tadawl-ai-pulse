@@ -187,12 +187,29 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
       return null;
     }
     
-    const price = parseFloat(data.close || data.price || '0');
+    let price = parseFloat(data.close || data.price || '0');
+    
+    // For Saudi stocks, validate and fix price range issues
+    if (symbol.includes('.SR') && currency === 'SAR') {
+      // Saudi stock prices are typically between 5-500 SAR
+      // If we get a very high price, it might be in wrong currency or scale
+      if (price > 500) {
+        console.log(`⚠️ High price detected for Saudi stock ${symbol}: ${price} SAR, checking if conversion needed`);
+        // This might be a currency conversion issue or wrong API response
+        return null;
+      }
+      if (price > 200) {
+        // Double check - most Saudi stocks are under 200 SAR
+        console.log(`⚠️ Unusually high price for Saudi stock ${symbol}: ${price} SAR`);
+      }
+    }
     
     // Validate price is reasonable for the currency
-    const maxPrice = currency === 'USD' ? 10000 : 1000; // Higher limit for USD
-    if (price <= 0 || price > maxPrice) {
-      console.log(`❌ Invalid price for ${symbol}: ${price} ${currency}`);
+    const maxPrice = currency === 'USD' ? 10000 : (symbol.includes('.SR') ? 500 : 1000);
+    const minPrice = symbol.includes('.SR') ? 1 : 0.01;
+    
+    if (price <= minPrice || price > maxPrice) {
+      console.log(`❌ Invalid price for ${symbol}: ${price} ${currency} (expected range: ${minPrice}-${maxPrice})`);
       return null;
     }
     
