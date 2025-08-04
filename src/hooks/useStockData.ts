@@ -101,32 +101,50 @@ export const useStockData = (symbol: string, market: 'us' | 'saudi' = 'us') => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      setCandlestickData(data.candlestickData || []);
+      // Set real candlestick data if available
+      if (data.candlestickData && data.candlestickData.length > 0) {
+        setCandlestickData(data.candlestickData);
+        return;
+      }
     } catch (err) {
       console.error('Error fetching candlestick data:', err);
-      // Generate realistic fallback candlestick data
-      const basePrice = 100 + Math.random() * 200;
-      const fallbackData = Array.from({ length: 20 }, (_, i) => {
-        const variance = (Math.random() - 0.5) * 10;
-        const open = basePrice + variance;
-        const close = open + (Math.random() - 0.5) * 5;
-        const high = Math.max(open, close) + Math.random() * 3;
-        const low = Math.min(open, close) - Math.random() * 3;
-        
-        return {
-          time: new Date(Date.now() - (19 - i) * 30 * 60 * 1000).toLocaleTimeString('ar-SA', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }),
-          open: Number(open.toFixed(2)),
-          high: Number(high.toFixed(2)),
-          low: Number(low.toFixed(2)),
-          close: Number(close.toFixed(2)),
-          volume: Math.floor(Math.random() * 1000000) + 100000
-        };
-      });
-      setCandlestickData(fallbackData);
     }
+    
+    // Enhanced fallback with 96 periods (8 hours) to match API format
+    const basePrice = quote?.price || 100;
+    const fallbackData = Array.from({ length: 96 }, (_, i) => {
+      const timeStamp = new Date(Date.now() - (95 - i) * 5 * 60 * 1000); // 5-minute intervals
+      
+      // Create realistic price movement with trend
+      const progress = i / 96;
+      const dailyTrend = (Math.random() - 0.5) * 0.02;
+      const volatility = 0.015 + Math.random() * 0.01;
+      const noise = (Math.random() - 0.5) * volatility;
+      
+      const trendAdjustment = dailyTrend * progress;
+      const open = basePrice * (1 + trendAdjustment + noise);
+      const changePercent = (Math.random() - 0.5) * 0.02;
+      const close = open * (1 + changePercent);
+      
+      // Realistic wicks
+      const wickSize = Math.random() * 0.008;
+      const high = Math.max(open, close) * (1 + wickSize);
+      const low = Math.min(open, close) * (1 - wickSize);
+      
+      return {
+        time: timeStamp.toLocaleTimeString('ar-SA', { 
+          hour: '2-digit', 
+          minute: '2-digit',
+          hour12: false
+        }),
+        open: Number(open.toFixed(2)),
+        high: Number(high.toFixed(2)),
+        low: Number(low.toFixed(2)),
+        close: Number(close.toFixed(2)),
+        volume: Math.floor(Math.random() * 500000) + 50000
+      };
+    });
+    setCandlestickData(fallbackData);
   };
 
   const fetchTechnicalIndicators = async () => {

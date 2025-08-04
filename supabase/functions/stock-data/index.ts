@@ -231,11 +231,11 @@ serve(async (req) => {
       
       const { data: dbStocks, error } = await query.order('symbol');
       
-      // Check if we have recent data (less than 5 minutes old) - be strict about freshness
+      // Check if we have recent data (less than 3 minutes old) - strict freshness
       const now = new Date();
       const hasRecentData = dbStocks && dbStocks.length > 0 && dbStocks.every(stock => {
         const lastUpdate = new Date(stock.last_updated || 0);
-        return (now.getTime() - lastUpdate.getTime()) < 5 * 60 * 1000; // 5 minutes
+        return (now.getTime() - lastUpdate.getTime()) < 3 * 60 * 1000; // 3 minutes
       });
       
       if (hasRecentData) {
@@ -262,8 +262,37 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } else {
-        // Data is stale or missing - don't show old prices
-        console.log(`❌ Database data is stale or missing - not serving outdated prices`);
+        // If data is stale but exists, serve it while triggering refresh
+        if (dbStocks && dbStocks.length > 0) {
+          console.log(`⚠️ Serving slightly stale data while triggering refresh...`);
+          
+          // Trigger background refresh
+          supabase.functions.invoke('stock-updater').catch(console.error);
+          
+          const apiFormatStocks = dbStocks.map(stock => ({
+            symbol: stock.symbol,
+            name: stock.name,
+            price: Number(stock.price || 0),
+            change: Number(stock.change || 0),
+            changePercent: Number(stock.change_percent || 0),
+            volume: Number(stock.volume || 0),
+            high: Number(stock.high || stock.price || 0),
+            low: Number(stock.low || stock.price || 0),
+            open: Number(stock.open || stock.price || 0),
+            timestamp: stock.last_updated || new Date().toISOString(),
+            market: stock.market,
+            recommendation: stock.recommendation || 'hold',
+            reason: stock.reason || 'لا توجد توصية متاحة'
+          }));
+          
+          return new Response(
+            JSON.stringify({ stocks: apiFormatStocks }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // No data at all - show message
+        console.log(`❌ No data available`);
         
         // Trigger background refresh
         supabase.functions.invoke('stock-updater').catch(console.error);
@@ -355,16 +384,20 @@ serve(async (req) => {
 
       case 'timeseries':
         try {
-          // Try to get real candlestick data
+          // Get real candlestick data from TwelveData API
           const interval = '5min';
-          const outputsize = 48;
+          const outputsize = 96; // 8 hours of 5-minute data for better chart
           const timeseriesUrl = `${BASE_URL}/time_series?symbol=${symbol}&interval=${interval}&outputsize=${outputsize}&apikey=${TWELVEDATA_API_KEY}`;
           
+          console.log(`Fetching real timeseries for ${symbol}...`);
           const response = await fetch(timeseriesUrl);
+          
           if (response.ok) {
             const data = await response.json();
             
-            if (data && data.values && Array.isArray(data.values)) {
+            if (data && data.values && Array.isArray(data.values) && data.values.length > 0) {
+              console.log(`✅ Got ${data.values.length} real candlestick data points for ${symbol}`);
+              
               const candlestickData = data.values.reverse().map((item: any) => ({
                 time: new Date(item.datetime).toLocaleTimeString('ar-SA', { 
                   hour: '2-digit', 
@@ -384,25 +417,30 @@ serve(async (req) => {
               );
             }
           }
+          
+          console.log(`⚠️ Real timeseries failed for ${symbol}, using enhanced fallback`);
         } catch (error) {
-          console.log('Timeseries API failed, using enhanced fallback');
+          console.log(`❌ Timeseries API error for ${symbol}:`, error);
         }
         
-        // Enhanced realistic candlestick fallback
+        // Enhanced realistic candlestick fallback based on current stock price
         const basePrice = REALISTIC_STOCK_DATA[symbol]?.price || 100;
-        const candlestickData = Array.from({ length: 48 }, (_, i) => {
-          const timeStamp = new Date(Date.now() - (47 - i) * 5 * 60 * 1000); // 5-minute intervals
+        const candlestickData = Array.from({ length: 96 }, (_, i) => {
+          const timeStamp = new Date(Date.now() - (95 - i) * 5 * 60 * 1000); // 5-minute intervals
           
-          // Create realistic price movement
-          const volatility = 0.02;
-          const trend = (Math.random() - 0.5) * 0.01;
+          // Create more realistic price movement with trend
+          const progress = i / 96;
+          const dailyTrend = (Math.random() - 0.5) * 0.02; // Overall daily trend
+          const volatility = 0.015 + Math.random() * 0.01; // Variable volatility
           const noise = (Math.random() - 0.5) * volatility;
           
-          const open = basePrice + (Math.random() - 0.5) * 5;
-          const changePercent = trend + noise;
+          const trendAdjustment = dailyTrend * progress;
+          const open = basePrice * (1 + trendAdjustment + noise);
+          const changePercent = (Math.random() - 0.5) * 0.02;
           const close = open * (1 + changePercent);
           
-          const wickSize = Math.random() * 0.01;
+          // More realistic wicks
+          const wickSize = Math.random() * 0.008; // Smaller, more realistic wicks
           const high = Math.max(open, close) * (1 + wickSize);
           const low = Math.min(open, close) * (1 - wickSize);
           

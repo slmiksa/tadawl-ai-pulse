@@ -44,6 +44,7 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const currentMarket = useRef(market);
 
   // For 'all' market, we need to fetch both US and Saudi stocks separately and combine them
   const handleAllMarketFetch = async (forceRefresh = false) => {
@@ -422,6 +423,12 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
       console.log('🕐 Scheduled background update starting...');
       supabase.functions.invoke('stock-updater').then(() => {
         console.log('🔄 Scheduled background update completed');
+        // Refresh local cache after background update
+        setTimeout(() => {
+          if (currentMarket.current === market) {
+            fetchStocks(true); // Force refresh
+          }
+        }, 10000); // Wait 10 seconds for DB update
       }).catch((error) => {
         console.log('❌ Scheduled background update failed:', error);
       });
@@ -437,6 +444,9 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
     };
     
     initializeIfNeeded();
+    
+    // Update ref when market changes
+    currentMarket.current = market;
     
     // Cleanup interval on unmount
     return () => {
