@@ -161,12 +161,19 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
   }
   
   try {
-    const cleanSymbol = symbol.replace('.SR', '.SAU');
-    // Use USD currency for US stocks and SAR for Saudi stocks
-    const currency = symbol.endsWith('.SR') ? 'SAR' : 'USD';
-    const url = `https://api.twelvedata.com/quote?symbol=${cleanSymbol}&apikey=${apiKey}&currency=${currency}`;
+    // For Saudi stocks, don't add currency parameter to get default market currency
+    // The API seems to return wrong values when we specify SAR currency
+    let url;
+    if (symbol.endsWith('.SR')) {
+      const cleanSymbol = symbol.replace('.SR', '.SAU');
+      url = `https://api.twelvedata.com/quote?symbol=${cleanSymbol}&apikey=${apiKey}`;
+      console.log(`Fetching Saudi stock ${symbol} without currency specification...`);
+    } else {
+      url = `https://api.twelvedata.com/quote?symbol=${symbol}&apikey=${apiKey}`;
+      console.log(`Fetching US stock ${symbol}...`);
+    }
     
-    console.log(`Fetching real data for ${symbol} in ${currency} from API...`);
+    console.log(`📊 API URL: ${url}`);
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -188,25 +195,30 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     }
     
     let price = parseFloat(data.close || data.price || '0');
+    const currency = symbol.endsWith('.SR') ? 'SAR' : 'USD';
     
-    // For Saudi stocks, validate and fix price range issues
-    if (symbol.includes('.SR') && currency === 'SAR') {
-      // Saudi stock prices are typically between 5-500 SAR
-      // If we get a very high price, it might be in wrong currency or scale
-      if (price > 500) {
-        console.log(`⚠️ High price detected for Saudi stock ${symbol}: ${price} SAR, checking if conversion needed`);
-        // This might be a currency conversion issue or wrong API response
+    // For Saudi stocks, validate price range more strictly
+    if (symbol.includes('.SR')) {
+      console.log(`🔍 Saudi stock ${symbol} raw price: ${price}`);
+      
+      // Saudi stocks typically trade between 5-300 SAR
+      // If price is above 300, it's likely wrong
+      if (price > 300) {
+        console.log(`❌ Price too high for Saudi stock ${symbol}: ${price}, rejecting`);
         return null;
       }
-      if (price > 200) {
-        // Double check - most Saudi stocks are under 200 SAR
-        console.log(`⚠️ Unusually high price for Saudi stock ${symbol}: ${price} SAR`);
+      
+      // Check if price is in expected range for this specific stock
+      // Bank stocks typically trade between 10-100 SAR
+      if (symbol === '1140.SR' && (price < 10 || price > 100)) {
+        console.log(`❌ Price out of expected range for Bank Al-Bilad (1140.SR): ${price} SAR`);
+        return null;
       }
     }
     
     // Validate price is reasonable for the currency
-    const maxPrice = currency === 'USD' ? 10000 : (symbol.includes('.SR') ? 500 : 1000);
-    const minPrice = symbol.includes('.SR') ? 1 : 0.01;
+    const maxPrice = currency === 'USD' ? 10000 : 300; // Stricter limit for SAR
+    const minPrice = symbol.includes('.SR') ? 5 : 0.01;
     
     if (price <= minPrice || price > maxPrice) {
       console.log(`❌ Invalid price for ${symbol}: ${price} ${currency} (expected range: ${minPrice}-${maxPrice})`);
