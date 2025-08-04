@@ -152,98 +152,7 @@ const generateTechnicalAnalysis = (symbol: string, price: number, changePercent:
   };
 };
 
-// Enhanced realistic fallback data generator
-const generateRealisticFallback = (symbol: string, market: 'us' | 'saudi'): StockQuote => {
-  const seed = symbol.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
-  const random = (seed * 9301 + 49297) % 233280 / 233280;
-  
-  let basePrice: number;
-  let name: string;
-  
-  if (market === 'us') {
-    const names: Record<string, string> = {
-      'AAPL': 'Apple Inc.',
-      'MSFT': 'Microsoft Corporation',
-      'GOOGL': 'Alphabet Inc.',
-      'AMZN': 'Amazon.com Inc.',
-      'NVDA': 'NVIDIA Corporation',
-      'TSLA': 'Tesla Inc.',
-      'META': 'Meta Platforms Inc.',
-      'BRK.B': 'Berkshire Hathaway Inc.',
-      'V': 'Visa Inc.',
-      'JNJ': 'Johnson & Johnson',
-      'WMT': 'Walmart Inc.',
-      'JPM': 'JPMorgan Chase & Co.',
-      'UNH': 'UnitedHealth Group Inc.',
-      'MA': 'Mastercard Inc.',
-      'PG': 'Procter & Gamble Co.',
-      'HD': 'Home Depot Inc.',
-      'CVX': 'Chevron Corporation',
-      'LLY': 'Eli Lilly and Company',
-      'ABBV': 'AbbVie Inc.',
-      'PFE': 'Pfizer Inc.',
-      'KO': 'Coca-Cola Company',
-      'PEP': 'PepsiCo Inc.',
-      'TMO': 'Thermo Fisher Scientific',
-      'COST': 'Costco Wholesale Corp.',
-      'MRK': 'Merck & Co. Inc.',
-      'BAC': 'Bank of America Corp.',
-      'XOM': 'Exxon Mobil Corporation',
-      'AVGO': 'Broadcom Inc.',
-      'DIS': 'Walt Disney Company',
-      'ABT': 'Abbott Laboratories'
-    };
-    
-    name = names[symbol] || `${symbol} Corporation`;
-    basePrice = 50 + (random * 400); // $50-$450
-  } else {
-    const names: Record<string, string> = {
-      '2222.SR': 'أرامكو السعودية',
-      '1120.SR': 'بنك الراجحي',
-      '2010.SR': 'سابك',
-      '7203.SR': 'صافولا',
-      '1180.SR': 'البنك الأهلي التجاري',
-      '2020.SR': 'مجموعة صافولا',
-      '1210.SR': 'بنك الرياض',
-      '2030.SR': 'مجموعة سامبا المالية',
-      '1140.SR': 'بنك البلاد',
-      '2170.SR': 'معادن',
-      '4270.SR': 'مصفاة أرامكو السعودية',
-      '2001.SR': 'كيمانول',
-      '4002.SR': 'زين السعودية',
-      '1211.SR': 'معادن وعد الشمال',
-      '2090.SR': 'غذائية',
-      '4020.SR': 'اتصالات'
-    };
-    
-    name = names[symbol] || `شركة ${symbol.replace('.SR', '')}`;
-    basePrice = 20 + (random * 180); // 20-200 SAR
-  }
-  
-  const changePercent = (random - 0.5) * 10; // -5% to +5%
-  const change = basePrice * (changePercent / 100);
-  const volume = Math.floor(random * 10000000) + 100000;
-  
-  const high = basePrice + Math.abs(change) * (0.5 + random * 0.5);
-  const low = basePrice - Math.abs(change) * (0.5 + random * 0.5);
-  const open = basePrice + (random - 0.5) * Math.abs(change);
-  
-  // Generate technical analysis
-  const technicalAnalysis = generateTechnicalAnalysis(symbol, basePrice, changePercent, volume, high, low);
-  
-  return {
-    symbol,
-    name,
-    price: Number(basePrice.toFixed(2)),
-    change: Number(change.toFixed(2)),
-    changePercent: Number(changePercent.toFixed(2)),
-    volume,
-    high: Number(high.toFixed(2)),
-    low: Number(low.toFixed(2)),
-    open: Number(open.toFixed(2)),
-    ...technicalAnalysis
-  };
-};
+// Remove fallback data generation - only use real API data
 
 async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuote | null> {
   if (!apiKey) {
@@ -334,17 +243,16 @@ async function updateStocksInBatches(symbols: string[], market: 'us' | 'saudi', 
         console.log(`✓ Real data: ${symbol} = ${realData.price} (${realData.changePercent >= 0 ? '+' : ''}${realData.changePercent}%)`);
         return realData;
       } else {
-        // Use realistic fallback
-        const fallbackData = generateRealisticFallback(symbol, market);
-        console.log(`⚠ Fallback: ${symbol} = ${fallbackData.price} (${fallbackData.changePercent >= 0 ? '+' : ''}${fallbackData.changePercent}%)`);
-        return fallbackData;
+        // Skip symbols without real data - no fallback data
+        console.log(`⚠ Skipping ${symbol} - no real data available`);
+        return null;
       }
     });
     
     const batchResults = await Promise.allSettled(batchPromises);
     
     batchResults.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value) {
+      if (result.status === 'fulfilled' && result.value && result.value !== null) {
         results.push(result.value);
       }
     });
@@ -358,7 +266,7 @@ async function updateStocksInBatches(symbols: string[], market: 'us' | 'saudi', 
   // Update database with all results
   if (results.length > 0) {
     await updateDatabase(results, market, supabase);
-    console.log(`✅ ${market.toUpperCase()} Update Complete: ${results.length} total stocks, ${realDataCount} real data, ${results.length - realDataCount} fallback`);
+    console.log(`✅ ${market.toUpperCase()} Update Complete: ${results.length} real stocks only - no fallback data`);
   }
   
   return { total: results.length, real: realDataCount, results };
@@ -445,7 +353,7 @@ Deno.serve(async (req) => {
         const totalStocks = usResults.total + saudiResults.total;
         const realDataPercentage = totalStocks > 0 ? ((totalReal / totalStocks) * 100).toFixed(1) : '0';
         
-        console.log(`🎯 Background update completed: Total(${totalStocks}), Real(${totalReal}/${realDataPercentage}%), US(${usResults.total}/${usResults.real}), Saudi(${saudiResults.total}/${saudiResults.real})`);
+        console.log(`🎯 Background update completed: Total real stocks(${totalStocks}), US(${usResults.total}), Saudi(${saudiResults.total}) - 100% real data only`);
         
         return {
           success: true,
