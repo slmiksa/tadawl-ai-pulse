@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, TrendingDown, Star, AlertCircle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Star, AlertCircle, Eye, Activity, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StockCardProps {
@@ -9,10 +9,15 @@ interface StockCardProps {
   price: number;
   change: number;
   changePercent: number;
+  volume?: number;
+  high?: number;
+  low?: number;
   recommendation: 'buy' | 'sell' | 'hold';
   reason: string;
   market: 'us' | 'saudi';
   isFavorite?: boolean;
+  isRealData?: boolean;
+  lastUpdated?: string;
   onToggleFavorite?: (symbol: string) => void;
   onViewDetails?: (stockData: any) => void;
 }
@@ -23,10 +28,15 @@ const StockCard: React.FC<StockCardProps> = ({
   price,
   change,
   changePercent,
+  volume,
+  high,
+  low,
   recommendation,
   reason,
   market,
   isFavorite = false,
+  isRealData = false,
+  lastUpdated,
   onToggleFavorite,
   onViewDetails,
 }) => {
@@ -79,17 +89,29 @@ const StockCard: React.FC<StockCardProps> = ({
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 hover:border-purple-500/50 transition-all">
+    <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 hover:border-purple-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-purple-500/10">
+      {/* Header with symbol, market label, and favorite */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-3">
           <div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mb-1">
               <h3 className="text-lg font-bold text-white">{symbol}</h3>
               <span className="text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded">
                 {marketLabel}
               </span>
+              {/* Real data indicator */}
+              <div className={cn(
+                "flex items-center space-x-1 text-xs px-2 py-1 rounded-full",
+                isRealData ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"
+              )}>
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  isRealData ? "bg-green-400 animate-pulse" : "bg-yellow-400"
+                )} />
+                <span>{isRealData ? "حقيقي" : "تجريبي"}</span>
+              </div>
             </div>
-            <p className="text-sm text-gray-400">{name}</p>
+            <p className="text-sm text-gray-400 truncate max-w-[200px]">{name}</p>
           </div>
         </div>
         <button
@@ -105,31 +127,58 @@ const StockCard: React.FC<StockCardProps> = ({
         </button>
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex flex-col space-y-1">
-          <div className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-white">
-              {market === 'us' ? `$${price.toFixed(2)}` : `${price.toFixed(2)} ريال`}
-            </span>
-          </div>
-          <div className="text-sm text-gray-400">
-            {market === 'us' ? `≈ ${priceInSar.toFixed(2)} ريال` : `≈ $${priceInUsd.toFixed(2)}`}
-          </div>
+      {/* Price section */}
+      <div className="flex flex-col space-y-2 mb-4">
+        <div className="flex items-center justify-between">
+          <span className="text-2xl font-bold text-white">
+            {market === 'us' ? `$${price.toFixed(2)}` : `${price.toFixed(2)} ر.س`}
+          </span>
           <div className={cn(
-            "flex items-center space-x-1 px-2 py-1 rounded w-fit",
+            "flex items-center space-x-1 px-2 py-1 rounded-lg text-sm font-medium",
             isPositive ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           )}>
             {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-            <span className="text-sm font-medium">
-              {isPositive ? '+' : ''}{change.toFixed(2)} ({changePercent.toFixed(2)}%)
-            </span>
+            <span>{isPositive ? '+' : ''}{change.toFixed(2)}</span>
+            <span>({changePercent.toFixed(2)}%)</span>
           </div>
         </div>
+        
+        {/* Currency conversion */}
+        <div className="text-sm text-gray-400">
+          ≈ {market === 'us' ? `${priceInSar.toFixed(2)} ر.س` : `$${priceInUsd.toFixed(2)}`}
+        </div>
+        
+        {/* Additional data row */}
+        <div className="flex items-center justify-between text-xs text-gray-400">
+          <div className="flex items-center space-x-3">
+            {high && (
+              <span>عالي: {market === 'us' ? '$' : 'ر.س'}{high.toFixed(2)}</span>
+            )}
+            {low && (
+              <span>منخفض: {market === 'us' ? '$' : 'ر.س'}{low.toFixed(2)}</span>
+            )}
+          </div>
+          {volume && (
+            <div className="flex items-center space-x-1">
+              <Activity className="w-3 h-3" />
+              <span>{volume > 1000000 ? `${(volume / 1000000).toFixed(1)}M` : `${(volume / 1000).toFixed(0)}K`}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Last updated */}
+        {lastUpdated && (
+          <div className="flex items-center space-x-1 text-xs text-gray-500">
+            <Clock className="w-3 h-3" />
+            <span>آخر تحديث: {new Date(lastUpdated).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        )}
       </div>
 
+      {/* Recommendation badge */}
       <div className="mb-3">
         <div className={cn(
-          "inline-flex items-center space-x-2 px-3 py-1 rounded-lg border text-sm font-medium",
+          "inline-flex items-center space-x-2 px-3 py-2 rounded-lg border text-sm font-medium",
           getRecommendationColor(recommendation)
         )}>
           <AlertCircle className="w-4 h-4" />
@@ -137,15 +186,18 @@ const StockCard: React.FC<StockCardProps> = ({
         </div>
       </div>
 
+      {/* Reason */}
       <div className="mb-4">
-        <p className="text-sm text-gray-300 leading-relaxed">{reason}</p>
+        <p className="text-sm text-gray-300 leading-relaxed line-clamp-2">{reason}</p>
       </div>
 
+      {/* View details button */}
       <button
         onClick={handleViewDetails}
-        className="w-full bg-gradient-to-r from-purple-600 to-yellow-600 text-white py-2 px-4 rounded-lg font-medium hover:from-purple-700 hover:to-yellow-700 transition-all"
+        className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200"
       >
-        عرض التفاصيل
+        <Eye className="w-4 h-4" />
+        <span>عرض التفاصيل</span>
       </button>
     </div>
   );

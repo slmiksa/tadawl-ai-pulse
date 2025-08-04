@@ -221,7 +221,7 @@ const StockDetails: React.FC<StockDetailsProps> = ({
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
                 <span className="text-3xl sm:text-4xl font-bold text-white">
-                  {market === 'us' ? `$${currentPrice.toFixed(2)}` : `${currentPrice.toFixed(2)} ريال`}
+                  {market === 'us' ? `$${currentPrice.toFixed(2)}` : `${currentPrice.toFixed(2)} ر.س`}
                 </span>
                 <div className={cn(
                   "flex items-center space-x-2 px-3 py-1 rounded-lg w-fit",
@@ -234,11 +234,24 @@ const StockDetails: React.FC<StockDetailsProps> = ({
                 </div>
               </div>
               <div className="text-sm text-gray-400 mb-1">
-                {market === 'us' ? `≈ ${priceInSar.toFixed(2)} ريال سعودي` : `≈ $${priceInUsd.toFixed(2)} دولار أمريكي`}
+                {market === 'us' ? `≈ ${priceInSar.toFixed(2)} ر.س` : `≈ $${priceInUsd.toFixed(2)}`}
               </div>
-              <div className="text-xs sm:text-sm text-gray-400">
-                آخر تحديث: {quote?.timestamp ? new Date(quote.timestamp).toLocaleString('ar-SA') : new Date().toLocaleTimeString('ar-SA')}
+              <div className="text-xs sm:text-sm text-gray-400 flex items-center space-x-2">
+                <Clock className="w-3 h-3" />
+                <span>آخر تحديث: {quote?.timestamp ? new Date(quote.timestamp).toLocaleString('ar-SA') : new Date().toLocaleTimeString('ar-SA')}</span>
               </div>
+              {quote && (
+                <div className="text-xs text-green-400 mt-1 flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span>بيانات حقيقية من TwelveData API</span>
+                </div>
+              )}
+              {!quote && (
+                <div className="text-xs text-yellow-400 mt-1 flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span>بيانات تجريبية - في انتظار البيانات الحقيقية</span>
+                </div>
+              )}
             </div>
             
             {/* Recommendation Section */}
@@ -255,11 +268,15 @@ const StockDetails: React.FC<StockDetailsProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-gray-700">
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">الأعلى اليوم</p>
-              <p className="text-sm sm:text-lg font-semibold text-green-400">${quote?.high?.toFixed(2) || (currentPrice * 1.02).toFixed(2)}</p>
+              <p className="text-sm sm:text-lg font-semibold text-green-400">
+                {market === 'us' ? '$' : 'ر.س'}{quote?.high?.toFixed(2) || (currentPrice * 1.02).toFixed(2)}
+              </p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">الأدنى اليوم</p>
-              <p className="text-sm sm:text-lg font-semibold text-red-400">${quote?.low?.toFixed(2) || (currentPrice * 0.98).toFixed(2)}</p>
+              <p className="text-sm sm:text-lg font-semibold text-red-400">
+                {market === 'us' ? '$' : 'ر.س'}{quote?.low?.toFixed(2) || (currentPrice * 0.98).toFixed(2)}
+              </p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
               <p className="text-xs sm:text-sm text-gray-400 mb-1">حجم التداول</p>
@@ -268,8 +285,10 @@ const StockDetails: React.FC<StockDetailsProps> = ({
               </p>
             </div>
             <div className="text-center p-2 sm:p-3 bg-gray-700/30 rounded-lg">
-              <p className="text-xs sm:text-sm text-gray-400 mb-1">القيمة السوقية</p>
-              <p className="text-sm sm:text-lg font-semibold text-purple-400">2.8B</p>
+              <p className="text-xs sm:text-sm text-gray-400 mb-1">الافتتاح</p>
+              <p className="text-sm sm:text-lg font-semibold text-purple-400">
+                {market === 'us' ? '$' : 'ر.س'}{quote?.open?.toFixed(2) || currentPrice.toFixed(2)}
+              </p>
             </div>
           </div>
         </div>

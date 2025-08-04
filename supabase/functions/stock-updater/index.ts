@@ -429,21 +429,35 @@ Deno.serve(async (req) => {
     // Update both markets in parallel using background tasks
     const updatePromise = (async () => {
       try {
+        // Ensure we have the API key before starting
+        if (!apiKey) {
+          console.log('⚠️ No TWELVEDATA_API_KEY found - using fallback data only');
+        } else {
+          console.log('✅ Using TwelveData API for real quotes');
+        }
+        
         const [usResults, saudiResults] = await Promise.all([
           updateStocksInBatches(US_STOCKS, 'us', apiKey || '', supabase),
           updateStocksInBatches(SAUDI_STOCKS, 'saudi', apiKey || '', supabase)
         ]);
         
-        console.log(`Background update completed: US(${usResults.total}/${usResults.real} real), Saudi(${saudiResults.total}/${saudiResults.real} real)`);
+        const totalReal = usResults.real + saudiResults.real;
+        const totalStocks = usResults.total + saudiResults.total;
+        const realDataPercentage = totalStocks > 0 ? ((totalReal / totalStocks) * 100).toFixed(1) : '0';
+        
+        console.log(`🎯 Background update completed: Total(${totalStocks}), Real(${totalReal}/${realDataPercentage}%), US(${usResults.total}/${usResults.real}), Saudi(${saudiResults.total}/${saudiResults.real})`);
         
         return {
           success: true,
           us: usResults,
           saudi: saudiResults,
+          totalReal,
+          totalStocks,
+          realDataPercentage,
           timestamp: new Date().toISOString()
         };
       } catch (error) {
-        console.error('Background update failed:', error);
+        console.error('❌ Background update failed:', error);
         return { success: false, error: error.message };
       }
     })();
