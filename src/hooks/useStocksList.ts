@@ -9,6 +9,7 @@ const stocksCache = new Map<string, {
 }>();
 
 const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
+const BACKGROUND_UPDATE_INTERVAL = 3 * 60 * 1000; // 3 minutes for background updates
 
 interface Stock {
   symbol: string;
@@ -407,14 +408,24 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
       try {
         // Call stock-updater in background - this will update database asynchronously
         supabase.functions.invoke('stock-updater');
-        console.log('Background stock update triggered');
+        console.log('🔄 Background stock update triggered');
       } catch (error) {
         console.log('Background update failed to start:', error);
       }
     };
     
     // Start background update after initial load
-    setTimeout(startBackgroundUpdate, 1000);
+    setTimeout(startBackgroundUpdate, 2000);
+    
+    // Set up automatic background updates every 3 minutes
+    const backgroundUpdateInterval = setInterval(() => {
+      console.log('🕐 Scheduled background update starting...');
+      supabase.functions.invoke('stock-updater').then(() => {
+        console.log('🔄 Scheduled background update completed');
+      }).catch((error) => {
+        console.log('❌ Scheduled background update failed:', error);
+      });
+    }, BACKGROUND_UPDATE_INTERVAL);
     
     // Run initial stock population if no data
     const initializeIfNeeded = async () => {
@@ -426,6 +437,11 @@ export const useStocksList = (market: 'all' | 'us' | 'saudi' = 'all') => {
     };
     
     initializeIfNeeded();
+    
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(backgroundUpdateInterval);
+    };
   }, [market]);
 
   const refreshStocks = () => {

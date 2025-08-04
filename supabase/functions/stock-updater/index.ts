@@ -5,17 +5,62 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Popular stocks for US market
+// Popular stocks for US market - Expanded list
 const US_STOCKS = [
-  'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'BRK.B', 'V', 'JNJ',
-  'WMT', 'JPM', 'UNH', 'MA', 'PG', 'HD', 'CVX', 'LLY', 'ABBV', 'PFE',
-  'KO', 'PEP', 'TMO', 'COST', 'MRK', 'BAC', 'XOM', 'AVGO', 'DIS', 'ABT'
+  // Tech Giants
+  'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'NVDA', 'TSLA', 'META', 'NFLX', 'ORCL',
+  'CRM', 'ADBE', 'INTC', 'AMD', 'PYPL', 'UBER', 'SNAP', 'SPOT', 'SQ', 'ZOOM',
+  
+  // Finance & Banking
+  'BRK.B', 'JPM', 'BAC', 'WFC', 'GS', 'MS', 'C', 'AXP', 'BLK', 'SCHW',
+  'V', 'MA', 'COF', 'USB', 'TFC', 'PNC',
+  
+  // Healthcare & Pharma
+  'JNJ', 'UNH', 'PFE', 'ABBV', 'LLY', 'TMO', 'ABT', 'DHR', 'BMY', 'AMGN',
+  'GILD', 'VRTX', 'REGN', 'BIIB', 'MRNA', 'CVS',
+  
+  // Consumer & Retail
+  'WMT', 'PG', 'KO', 'PEP', 'HD', 'COST', 'NKE', 'SBUX', 'MCD', 'DIS',
+  'LOW', 'TGT', 'CL', 'KMB', 'WBA', 'EBAY',
+  
+  // Energy & Utilities
+  'XOM', 'CVX', 'COP', 'SLB', 'EOG', 'KMI', 'OXY', 'PSX', 'VLO', 'MPC',
+  
+  // Industrial & Materials
+  'CAT', 'BA', 'MMM', 'GE', 'HON', 'UPS', 'RTX', 'LMT', 'DE', 'FDX',
+  
+  // Telecom & Media
+  'T', 'VZ', 'TMUS', 'CMCSA', 'CHTR', 'DIS'
 ];
 
-// Popular stocks for Saudi market  
+// Popular stocks for Saudi market - Expanded list
 const SAUDI_STOCKS = [
-  '2222.SR', '1120.SR', '2010.SR', '7203.SR', '1180.SR', '2020.SR', '1210.SR', '2030.SR',
-  '1140.SR', '2170.SR', '4270.SR', '2001.SR', '4002.SR', '1211.SR', '2090.SR', '4020.SR'
+  // Oil & Petrochemicals
+  '2222.SR', '2010.SR', '2001.SR', '2020.SR', '4030.SR', '2060.SR', '1832.SR', '2002.SR',
+  '2080.SR', '2310.SR', '2330.SR', '1303.SR', '2350.SR', '2340.SR', '4040.SR',
+  
+  // Banking & Finance
+  '1120.SR', '1180.SR', '1210.SR', '1030.SR', '1050.SR', '1150.SR', '1060.SR', '1040.SR',
+  '1020.SR', '1111.SR', '1140.SR', '1090.SR', '1183.SR', '1201.SR',
+  
+  // Telecom & Technology
+  '7010.SR', '4002.SR', '4003.SR', '4004.SR', '4005.SR', '4006.SR', '4007.SR', '4008.SR',
+  '4009.SR', '4013.SR', '4020.SR', '4090.SR', '4110.SR', '4160.SR',
+  
+  // Real Estate & Construction
+  '4020.SR', '4080.SR', '4100.SR', '4130.SR', '4140.SR', '4150.SR', '4170.SR', '4180.SR',
+  '4190.SR', '4200.SR', '4210.SR', '4220.SR', '4230.SR', '4240.SR',
+  
+  // Healthcare & Food
+  '7203.SR', '6001.SR', '6002.SR', '6004.SR', '6005.SR', '6010.SR', '6012.SR', '6013.SR',
+  '6020.SR', '6040.SR', '6050.SR', '6060.SR', '6070.SR', '2090.SR',
+  
+  // Mining & Industrial
+  '1211.SR', '2170.SR', '1301.SR', '1302.SR', '3001.SR', '3002.SR', '3003.SR', '3004.SR',
+  '3005.SR', '3007.SR', '3008.SR', '3010.SR', '3020.SR', '3030.SR',
+  
+  // Retail & Consumer
+  '4001.SR', '4050.SR', '4051.SR', '4061.SR', '4260.SR', '4290.SR', '4320.SR', '4330.SR'
 ];
 
 interface StockQuote {
@@ -201,15 +246,34 @@ const generateRealisticFallback = (symbol: string, market: 'us' | 'saudi'): Stoc
 };
 
 async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuote | null> {
+  if (!apiKey) {
+    console.log(`No API key provided for ${symbol}, using fallback`);
+    return null;
+  }
+  
   try {
     const cleanSymbol = symbol.replace('.SR', '.SAU');
     const url = `https://api.twelvedata.com/quote?symbol=${cleanSymbol}&apikey=${apiKey}`;
     
+    console.log(`Fetching real data for ${symbol} from API...`);
     const response = await fetch(url);
-    if (!response.ok) return null;
+    
+    if (!response.ok) {
+      console.log(`API response not OK for ${symbol}: ${response.status}`);
+      return null;
+    }
     
     const data = await response.json();
-    if (data.status === 'error' || !data.symbol) return null;
+    
+    if (data.status === 'error') {
+      console.log(`API error for ${symbol}: ${data.message || 'Unknown error'}`);
+      return null;
+    }
+    
+    if (!data.symbol || !data.close) {
+      console.log(`Invalid data structure for ${symbol}`);
+      return null;
+    }
     
     const price = parseFloat(data.close || data.price || '0');
     const previousClose = parseFloat(data.previous_close || price.toString());
@@ -241,24 +305,39 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
 }
 
 async function updateStocksInBatches(symbols: string[], market: 'us' | 'saudi', apiKey: string, supabase: any) {
-  const batchSize = 5;
+  const batchSize = 3; // Reduced batch size for better API compliance
   const results: StockQuote[] = [];
   let realDataCount = 0;
+  
+  console.log(`Starting ${market} update with ${symbols.length} symbols...`);
   
   // Process in batches to avoid rate limits
   for (let i = 0; i < symbols.length; i += batchSize) {
     const batch = symbols.slice(i, i + batchSize);
+    console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(symbols.length/batchSize)} for ${market}: ${batch.join(', ')}`);
     
     const batchPromises = batch.map(async (symbol) => {
-      // Try to fetch real data first
-      const realData = await fetchRealQuote(symbol, apiKey);
+      // Try to fetch real data first with retry logic
+      let realData = null;
+      if (apiKey) {
+        realData = await fetchRealQuote(symbol, apiKey);
+        
+        // If first attempt fails, try once more after a delay
+        if (!realData) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          realData = await fetchRealQuote(symbol, apiKey);
+        }
+      }
+      
       if (realData && realData.price > 0) {
         realDataCount++;
-        console.log(`✓ Fetched real data for ${symbol}: $${realData.price}`);
+        console.log(`✓ Real data: ${symbol} = ${realData.price} (${realData.changePercent >= 0 ? '+' : ''}${realData.changePercent}%)`);
         return realData;
       } else {
         // Use realistic fallback
-        return generateRealisticFallback(symbol, market);
+        const fallbackData = generateRealisticFallback(symbol, market);
+        console.log(`⚠ Fallback: ${symbol} = ${fallbackData.price} (${fallbackData.changePercent >= 0 ? '+' : ''}${fallbackData.changePercent}%)`);
+        return fallbackData;
       }
     });
     
@@ -270,15 +349,16 @@ async function updateStocksInBatches(symbols: string[], market: 'us' | 'saudi', 
       }
     });
     
-    // Add delay between batches to respect rate limits
+    // Add longer delay between batches to respect rate limits and avoid overwhelming the API
     if (i + batchSize < symbols.length) {
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Increased delay
     }
   }
   
   // Update database with all results
   if (results.length > 0) {
     await updateDatabase(results, market, supabase);
+    console.log(`✅ ${market.toUpperCase()} Update Complete: ${results.length} total stocks, ${realDataCount} real data, ${results.length - realDataCount} fallback`);
   }
   
   return { total: results.length, real: realDataCount, results };
