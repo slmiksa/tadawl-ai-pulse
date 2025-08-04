@@ -156,7 +156,7 @@ const generateTechnicalAnalysis = (symbol: string, price: number, changePercent:
 
 async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuote | null> {
   if (!apiKey) {
-    console.log(`No API key provided for ${symbol}, using fallback`);
+    console.log(`❌ No API key provided for ${symbol}`);
     return null;
   }
   
@@ -168,23 +168,31 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     const response = await fetch(url);
     
     if (!response.ok) {
-      console.log(`API response not OK for ${symbol}: ${response.status}`);
+      console.log(`❌ API response not OK for ${symbol}: ${response.status}`);
       return null;
     }
     
     const data = await response.json();
     
-    if (data.status === 'error') {
-      console.log(`API error for ${symbol}: ${data.message || 'Unknown error'}`);
+    // Check for API errors (like credit exhaustion)
+    if (data.status === 'error' || data.code === 429 || data.message?.includes('API credits')) {
+      console.log(`❌ API error for ${symbol}: ${data.message || 'Rate limit or credits exhausted'}`);
       return null;
     }
     
     if (!data.symbol || !data.close) {
-      console.log(`Invalid data structure for ${symbol}`);
+      console.log(`❌ Invalid data structure for ${symbol}`);
       return null;
     }
     
     const price = parseFloat(data.close || data.price || '0');
+    
+    // Validate price is reasonable
+    if (price <= 0 || price > 100000) {
+      console.log(`❌ Invalid price for ${symbol}: ${price}`);
+      return null;
+    }
+    
     const previousClose = parseFloat(data.previous_close || price.toString());
     const change = price - previousClose;
     const changePercent = previousClose > 0 ? (change / previousClose) * 100 : 0;
@@ -192,11 +200,13 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     const low = parseFloat(data.low || price.toString());
     const volume = parseInt(data.volume || '0');
     
-    // Generate technical analysis for real data too
+    // Generate technical analysis for real data
     const technicalAnalysis = generateTechnicalAnalysis(symbol, price, changePercent, volume, high, low);
     
+    console.log(`✅ Real data validated for ${symbol}: $${price} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
+    
     return {
-      symbol: symbol, // Keep original symbol format
+      symbol: symbol,
       name: data.name || symbol,
       price: Number(price.toFixed(2)),
       change: Number(change.toFixed(2)),
@@ -208,7 +218,7 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
       ...technicalAnalysis
     };
   } catch (error) {
-    console.error(`Error fetching ${symbol}:`, error);
+    console.error(`❌ Error fetching ${symbol}:`, error);
     return null;
   }
 }
@@ -263,10 +273,12 @@ async function updateStocksInBatches(symbols: string[], market: 'us' | 'saudi', 
     }
   }
   
-  // Update database with all results
+  // Only update database if we have real data
   if (results.length > 0) {
     await updateDatabase(results, market, supabase);
-    console.log(`✅ ${market.toUpperCase()} Update Complete: ${results.length} real stocks only - no fallback data`);
+    console.log(`✅ ${market.toUpperCase()} Update Complete: ${results.length} real stocks only`);
+  } else {
+    console.log(`❌ ${market.toUpperCase()} Update Failed: No real data available - API credits may be exhausted`);
   }
   
   return { total: results.length, real: realDataCount, results };

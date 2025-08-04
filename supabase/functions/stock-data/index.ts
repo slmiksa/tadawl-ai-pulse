@@ -231,11 +231,11 @@ serve(async (req) => {
       
       const { data: dbStocks, error } = await query.order('symbol');
       
-      // Check if we have recent data (less than 15 minutes old)
+      // Check if we have recent data (less than 5 minutes old) - be strict about freshness
       const now = new Date();
-      const hasRecentData = dbStocks && dbStocks.length > 0 && dbStocks.some(stock => {
+      const hasRecentData = dbStocks && dbStocks.length > 0 && dbStocks.every(stock => {
         const lastUpdate = new Date(stock.last_updated || 0);
-        return (now.getTime() - lastUpdate.getTime()) < 15 * 60 * 1000;
+        return (now.getTime() - lastUpdate.getTime()) < 5 * 60 * 1000; // 5 minutes
       });
       
       if (hasRecentData) {
@@ -261,14 +261,32 @@ serve(async (req) => {
           JSON.stringify({ stocks: apiFormatStocks }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      } else {
+        // Data is stale or missing - don't show old prices
+        console.log(`❌ Database data is stale or missing - not serving outdated prices`);
+        
+        // Trigger background refresh
+        supabase.functions.invoke('stock-updater').catch(console.error);
+        
+        return new Response(
+          JSON.stringify({ 
+            stocks: [],
+            message: "البيانات قيد التحديث - يرجى المحاولة خلال دقائق", 
+            status: "updating"
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
       
-      // Fetch fresh data
-      console.log('Fetching fresh data...');
-      const freshStocks = await fetchStocksFromAPI(market);
+      // Don't fetch fresh data - API is unreliable
+      console.log('❌ Cannot provide fresh data - API credits exhausted');
       
       return new Response(
-        JSON.stringify({ stocks: freshStocks }),
+        JSON.stringify({ 
+          stocks: [],
+          message: "البيانات غير متوفرة حالياً - API غير متاح",
+          status: "unavailable"
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
