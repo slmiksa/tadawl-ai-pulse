@@ -235,7 +235,7 @@ async function fetchRealQuote(symbol: string, apiKey: string): Promise<StockQuot
     // Generate technical analysis for real data
     const technicalAnalysis = generateTechnicalAnalysis(symbol, price, changePercent, volume, high, low);
     
-    console.log(`✅ Real data validated for ${symbol}: ${price} ${currency} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
+    console.log(`✅ Valid data for ${symbol}: ${price} ${currency} (${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(2)}%)`);
     
     return {
       symbol: symbol,
