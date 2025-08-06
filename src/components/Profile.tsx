@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { User, Settings, LogOut, Edit, Save, Mail, Phone, Calendar, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
+  const { language, setLanguage, t, isRTL } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState({
@@ -139,11 +141,11 @@ const Profile: React.FC = () => {
         <div className="flex items-center justify-center space-x-3 mb-4">
           <User className="w-8 h-8 text-purple-400" />
           <h1 className="text-3xl font-bold text-white">
-            الملف الشخصي
+            {t('profile.title')}
           </h1>
         </div>
         <p className="text-gray-400">
-          إدارة حسابك وتخصيص تجربتك
+          {t('profile.subtitle')}
         </p>
       </div>
 
@@ -175,7 +177,7 @@ const Profile: React.FC = () => {
             className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
           >
             <Edit className="w-4 h-4" />
-            <span>{isEditing ? 'إلغاء' : 'تعديل'}</span>
+            <span>{isEditing ? t('profile.cancel') : t('profile.edit')}</span>
           </button>
         </div>
 
@@ -184,14 +186,14 @@ const Profile: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
                 <Mail className="w-4 h-4 inline mr-2" />
-                البريد الإلكتروني
+                {t('profile.email')}
               </label>
                <p className="text-white">{userInfo.email}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
                 <Phone className="w-4 h-4 inline mr-2" />
-                رقم الجوال
+                {t('profile.phone')}
               </label>
                {isEditing ? (
                  <input
@@ -201,7 +203,7 @@ const Profile: React.FC = () => {
                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                  />
                ) : (
-                 <p className="text-white">{userInfo.phone || 'غير محدد'}</p>
+                 <p className="text-white">{userInfo.phone || t('profile.notSpecified')}</p>
                )}
             </div>
           </div>
@@ -209,14 +211,14 @@ const Profile: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
                 <Calendar className="w-4 h-4 inline mr-2" />
-                تاريخ الانضمام
+                {t('profile.joinDate')}
               </label>
               <p className="text-white">{userInfo.joinDate}</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
                 <Shield className="w-4 h-4 inline mr-2" />
-                مستوى الخبرة
+                {t('profile.experience')}
               </label>
               {isEditing ? (
                 <select
@@ -224,10 +226,10 @@ const Profile: React.FC = () => {
                   onChange={(e) => setTempUserInfo(prev => ({ ...prev, tradingExperience: e.target.value }))}
                   className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="مبتدئ">مبتدئ</option>
-                  <option value="متوسط">متوسط</option>
-                  <option value="متقدم">متقدم</option>
-                  <option value="خبير">خبير</option>
+                  <option value="مبتدئ">{t('profile.beginner')}</option>
+                  <option value="متوسط">{t('profile.intermediate')}</option>
+                  <option value="متقدم">{t('profile.advanced')}</option>
+                  <option value="خبير">{t('profile.expert')}</option>
                 </select>
               ) : (
                 <p className="text-white">{userInfo.tradingExperience}</p>
@@ -242,14 +244,14 @@ const Profile: React.FC = () => {
               onClick={handleCancel}
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              إلغاء
+              {t('profile.cancel')}
             </button>
             <button
               onClick={handleSave}
               className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
             >
               <Save className="w-4 h-4" />
-              <span>حفظ</span>
+              <span>{t('profile.save')}</span>
             </button>
           </div>
         )}
@@ -257,27 +259,27 @@ const Profile: React.FC = () => {
 
       {/* Account Stats */}
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-        <h2 className="text-xl font-bold text-white mb-4">إحصائيات الحساب</h2>
+        <h2 className="text-xl font-bold text-white mb-4">{t('profile.stats')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <div className="text-center">
             <p className="text-2xl font-bold text-purple-400">{accountStats.totalRecommendations}</p>
-            <p className="text-sm text-gray-400">توصية متابعة</p>
+            <p className="text-sm text-gray-400">{t('profile.recommendations')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-green-400">{accountStats.successfulTrades}</p>
-            <p className="text-sm text-gray-400">صفقة ناجحة</p>
+            <p className="text-sm text-gray-400">{t('profile.successfulTrades')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-yellow-400">{accountStats.favoriteStocks}</p>
-            <p className="text-sm text-gray-400">أسهم مفضلة</p>
+            <p className="text-sm text-gray-400">{t('profile.favoriteStocks')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-blue-400">{accountStats.daysActive}</p>
-            <p className="text-sm text-gray-400">يوم نشط</p>
+            <p className="text-sm text-gray-400">{t('profile.activeDays')}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-bold text-white">{accountStats.accuracy}%</p>
-            <p className="text-sm text-gray-400">دقة المتابعة</p>
+            <p className="text-sm text-gray-400">{t('profile.accuracy')}</p>
           </div>
         </div>
       </div>
@@ -286,18 +288,22 @@ const Profile: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-4 flex items-center">
           <Settings className="w-6 h-6 mr-3 text-purple-400" />
-          الإعدادات
+          {t('profile.settings')}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">اللغة</label>
-            <select className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+            <label className="block text-sm font-medium text-gray-400 mb-2">{t('profile.language')}</label>
+            <select 
+              value={language}
+              onChange={(e) => setLanguage(e.target.value as 'ar' | 'en')}
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-400 mb-2">المنطقة الزمنية</label>
+            <label className="block text-sm font-medium text-gray-400 mb-2">{t('profile.timezone')}</label>
             <select className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
               <option value="Asia/Riyadh">الرياض</option>
               <option value="America/New_York">نيويورك</option>
@@ -311,15 +317,15 @@ const Profile: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-red-700/50">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white">تسجيل الخروج</h3>
-            <p className="text-sm text-gray-400">تسجيل الخروج من حسابك</p>
+            <h3 className="text-lg font-semibold text-white">{t('profile.logout')}</h3>
+            <p className="text-sm text-gray-400">{t('profile.logoutSubtitle')}</p>
           </div>
           <button 
             onClick={handleLogout}
             className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            <span>تسجيل الخروج</span>
+            <span>{t('profile.logout')}</span>
           </button>
         </div>
       </div>

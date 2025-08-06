@@ -2,6 +2,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Star, AlertCircle, Eye, Activity, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface StockCardProps {
   symbol: string;
@@ -40,8 +41,9 @@ const StockCard: React.FC<StockCardProps> = ({
   onToggleFavorite,
   onViewDetails,
 }) => {
+  const { t } = useLanguage();
   const isPositive = change >= 0;
-  const marketLabel = market === 'us' ? 'أمريكي' : 'سعودي';
+  const marketLabel = market === 'us' ? t('stock.us') : t('stock.saudi');
   const usdToSar = 3.75; // سعر صرف تقريبي
   const priceInSar = price * usdToSar;
   const priceInUsd = market === 'saudi' ? price / usdToSar : price;
@@ -62,11 +64,11 @@ const StockCard: React.FC<StockCardProps> = ({
   const getRecommendationText = (rec: string) => {
     switch (rec) {
       case 'buy':
-        return 'شراء';
+        return t('stock.buy');
       case 'sell':
-        return 'بيع';
+        return t('stock.sell');
       case 'hold':
-        return 'انتظار';
+        return t('stock.hold');
       default:
         return 'غير محدد';
     }
@@ -108,7 +110,7 @@ const StockCard: React.FC<StockCardProps> = ({
                   "w-2 h-2 rounded-full",
                   isRealData ? "bg-green-400 animate-pulse" : "bg-yellow-400"
                 )} />
-                <span>{isRealData ? "حقيقي" : "تجريبي"}</span>
+                <span>{isRealData ? t('stock.realData') : t('stock.demoData')}</span>
               </div>
             </div>
             <p className="text-sm text-gray-400 truncate max-w-[200px]">{name}</p>
@@ -152,10 +154,10 @@ const StockCard: React.FC<StockCardProps> = ({
         <div className="flex items-center justify-between text-xs text-gray-400">
           <div className="flex items-center space-x-3">
             {high && (
-              <span>عالي: {market === 'us' ? '$' : 'ر.س'}{high.toFixed(2)}</span>
+              <span>{t('stock.high')}: {market === 'us' ? '$' : 'ر.س'}{high.toFixed(2)}</span>
             )}
             {low && (
-              <span>منخفض: {market === 'us' ? '$' : 'ر.س'}{low.toFixed(2)}</span>
+              <span>{t('stock.low')}: {market === 'us' ? '$' : 'ر.س'}{low.toFixed(2)}</span>
             )}
           </div>
           {volume && (
@@ -170,7 +172,7 @@ const StockCard: React.FC<StockCardProps> = ({
         {lastUpdated && (
           <div className="flex items-center space-x-1 text-xs text-gray-500">
             <Clock className="w-3 h-3" />
-            <span>آخر تحديث: {new Date(lastUpdated).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span>{t('stock.lastUpdate')}: {new Date(lastUpdated).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         )}
       </div>
@@ -197,7 +199,7 @@ const StockCard: React.FC<StockCardProps> = ({
         className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-2.5 px-4 rounded-lg font-medium transition-all duration-200"
       >
         <Eye className="w-4 h-4" />
-        <span>عرض التفاصيل</span>
+        <span>{t('stock.viewDetails')}</span>
       </button>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X, Crown, LogOut, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { useLanguage } from '@/contexts/LanguageContext';
 interface NavbarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;

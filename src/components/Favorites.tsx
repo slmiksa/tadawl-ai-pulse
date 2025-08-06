@@ -3,10 +3,12 @@ import React from 'react';
 import StockCard from './StockCard';
 import { Star, TrendingUp, RefreshCw } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 
 const Favorites: React.FC = () => {
   const { favorites, loading, error, fetchFavorites, toggleFavorite } = useFavorites();
+  const { t } = useLanguage();
 
   const handleViewDetails = (symbol: string) => {
     console.log('Viewing details for:', symbol);
@@ -23,12 +25,12 @@ const Favorites: React.FC = () => {
         <div className="flex items-center justify-center space-x-3 mb-4">
           <Star className="w-8 h-8 text-yellow-400 fill-current" />
           <h1 className="text-3xl font-bold text-white">
-            الأسهم المفضلة
+            {t('favorites.title')}
           </h1>
         </div>
         <div className="flex items-center justify-center gap-4">
           <p className="text-gray-400">
-            متابعة سريعة للأسهم التي تهمك
+            {t('favorites.subtitle')}
           </p>
           <Button 
             onClick={handleRefresh} 
@@ -47,7 +49,7 @@ const Favorites: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">إجمالي المفضلة</p>
+              <p className="text-sm text-gray-400">{t('favorites.total')}</p>
               <p className="text-2xl font-bold text-white">{favorites.length}</p>
             </div>
             <Star className="w-8 h-8 text-yellow-400" />
@@ -56,7 +58,7 @@ const Favorites: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">أسهم رابحة</p>
+              <p className="text-sm text-gray-400">{t('favorites.profitable')}</p>
               <p className="text-2xl font-bold text-green-400">
                 {favorites.filter(s => s.change > 0).length}
               </p>
@@ -67,7 +69,7 @@ const Favorites: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">توصيات شراء</p>
+              <p className="text-sm text-gray-400">{t('favorites.buyRecommendations')}</p>
               <p className="text-2xl font-bold text-purple-400">
                 {favorites.filter(s => s.recommendation === 'buy').length}
               </p>
@@ -92,7 +94,7 @@ const Favorites: React.FC = () => {
         <div className="text-center py-16">
           <p className="text-red-400 mb-4">{error}</p>
           <Button onClick={handleRefresh} variant="outline">
-            إعادة المحاولة
+            {t('common.retry')}
           </Button>
         </div>
       ) : favorites.length > 0 ? (
@@ -121,10 +123,10 @@ const Favorites: React.FC = () => {
         <div className="text-center py-16">
           <Star className="w-16 h-16 text-gray-600 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-400 mb-2">
-            لا توجد أسهم مفضلة
+            {t('favorites.empty')}
           </h3>
           <p className="text-gray-500">
-            أضف أسهمًا إلى المفضلة لمتابعتها بسهولة من صفحة الرئيسية
+            {t('favorites.emptySubtitle')}
           </p>
         </div>
       )}
