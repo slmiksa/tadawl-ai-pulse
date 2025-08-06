@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Crown, Star, Check, Zap, TrendingUp, Shield, Bell, ChartBar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface UserSubscription {
   package_type: 'basic' | 'pro';
@@ -10,6 +11,7 @@ interface UserSubscription {
 }
 
 const Subscriptions = () => {
+  const { t } = useLanguage();
   const [currentSubscription, setCurrentSubscription] = useState<UserSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -130,8 +132,8 @@ const Subscriptions = () => {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-white mb-4">باقات الاشتراك</h1>
-        <p className="text-gray-400 text-lg">اختر الباقة المناسبة لاحتياجاتك الاستثمارية</p>
+        <h1 className="text-3xl font-bold text-white mb-4">{t('subscriptions.title')}</h1>
+        <p className="text-gray-400 text-lg">{t('subscriptions.subtitle')}</p>
       </div>
 
       {/* Current Subscription Status */}
@@ -148,14 +150,14 @@ const Subscriptions = () => {
               </div>
               <div>
                 <h3 className="text-white font-bold text-lg">
-                  الباقة الحالية: {currentSubscription.package_type === 'basic' ? 'الأساسية' : 'البرو'}
+                  {t('subscriptions.currentPackage')}: {currentSubscription.package_type === 'basic' ? t('subscriptions.basicPackage') : t('subscriptions.proPackage')}
                 </h3>
                 <p className="text-gray-300">
-                  نشطة حتى: {currentSubscription.end_date ? new Date(currentSubscription.end_date).toLocaleDateString('ar-SA') : 'غير محدد'}
+                  {t('subscriptions.activeDntil')}: {currentSubscription.end_date ? new Date(currentSubscription.end_date).toLocaleDateString('ar-SA') : 'غير محدد'}
                 </p>
               </div>
             </div>
-            <div className="text-green-400 font-semibold">نشطة</div>
+            <div className="text-green-400 font-semibold">{t('subscriptions.active')}</div>
           </div>
         </div>
       )}
@@ -170,11 +172,11 @@ const Subscriptions = () => {
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Star className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">الباقة الأساسية</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">{t('subscriptions.basicPackage')}</h3>
             <div className="text-4xl font-bold text-white mb-2">
-              99 <span className="text-lg text-gray-400">ريال/شهر</span>
+              99 <span className="text-lg text-gray-400">{t('subscriptions.perMonth')}</span>
             </div>
-            <p className="text-gray-400">مثالية للمبتدئين في التداول</p>
+            <p className="text-gray-400">{t('subscriptions.ideal')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -195,7 +197,7 @@ const Subscriptions = () => {
                 : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white'
             }`}
           >
-            {currentSubscription?.package_type === 'basic' ? 'الباقة الحالية' : 'اشترك الآن'}
+            {currentSubscription?.package_type === 'basic' ? t('subscriptions.current') : t('subscriptions.subscribe')}
           </button>
         </div>
 
@@ -206,7 +208,7 @@ const Subscriptions = () => {
           {/* Popular Badge */}
           <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
             <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-1 rounded-full text-sm font-bold">
-              الأكثر شعبية
+              {t('subscriptions.mostPopular')}
             </div>
           </div>
 
@@ -214,11 +216,11 @@ const Subscriptions = () => {
             <div className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Crown className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-2xl font-bold text-white mb-2">باقة البرو</h3>
+            <h3 className="text-2xl font-bold text-white mb-2">{t('subscriptions.proPackage')}</h3>
             <div className="text-4xl font-bold text-white mb-2">
-              299 <span className="text-lg text-gray-400">ريال/شهر</span>
+              299 <span className="text-lg text-gray-400">{t('subscriptions.perMonth')}</span>
             </div>
-            <p className="text-gray-400">للمتداولين المحترفين والجادين</p>
+            <p className="text-gray-400">{t('subscriptions.professional')}</p>
           </div>
 
           <div className="space-y-4 mb-8">
@@ -239,34 +241,34 @@ const Subscriptions = () => {
                 : 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white'
             }`}
           >
-            {currentSubscription?.package_type === 'pro' ? 'الباقة الحالية' : 'اشترك الآن'}
+            {currentSubscription?.package_type === 'pro' ? t('subscriptions.current') : t('subscriptions.subscribe')}
           </button>
         </div>
       </div>
 
       {/* Features Comparison */}
       <div className="bg-gray-800 rounded-2xl p-8 border border-gray-700">
-        <h3 className="text-2xl font-bold text-white mb-6 text-center">مقارنة الميزات</h3>
+        <h3 className="text-2xl font-bold text-white mb-6 text-center">{t('subscriptions.featuresComparison')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="text-center space-y-4">
             <TrendingUp className="w-12 h-12 text-purple-400 mx-auto" />
-            <h4 className="text-white font-bold">تحليلات ذكية</h4>
-            <p className="text-gray-400 text-sm">تحليلات مدعومة بالذكاء الاصطناعي لاتخاذ قرارات أفضل</p>
+            <h4 className="text-white font-bold">{t('subscriptions.smartAnalytics')}</h4>
+            <p className="text-gray-400 text-sm">{t('subscriptions.smartAnalyticsDesc')}</p>
           </div>
           <div className="text-center space-y-4">
             <ChartBar className="w-12 h-12 text-blue-400 mx-auto" />
-            <h4 className="text-white font-bold">مؤشرات تقنية</h4>
-            <p className="text-gray-400 text-sm">مؤشرات متقدمة لتحليل الاتجاهات والفرص</p>
+            <h4 className="text-white font-bold">{t('subscriptions.technicalIndicators')}</h4>
+            <p className="text-gray-400 text-sm">{t('subscriptions.technicalIndicatorsDesc')}</p>
           </div>
           <div className="text-center space-y-4">
             <Bell className="w-12 h-12 text-yellow-400 mx-auto" />
-            <h4 className="text-white font-bold">تنبيهات فورية</h4>
-            <p className="text-gray-400 text-sm">تنبيهات مخصصة للفرص الاستثمارية المهمة</p>
+            <h4 className="text-white font-bold">{t('subscriptions.instantAlerts')}</h4>
+            <p className="text-gray-400 text-sm">{t('subscriptions.instantAlertsDesc')}</p>
           </div>
           <div className="text-center space-y-4">
             <Shield className="w-12 h-12 text-green-400 mx-auto" />
-            <h4 className="text-white font-bold">إدارة المخاطر</h4>
-            <p className="text-gray-400 text-sm">أدوات متقدمة لإدارة وتقليل المخاطر</p>
+            <h4 className="text-white font-bold">{t('subscriptions.riskManagement')}</h4>
+            <p className="text-gray-400 text-sm">{t('subscriptions.riskManagementDesc')}</p>
           </div>
         </div>
       </div>

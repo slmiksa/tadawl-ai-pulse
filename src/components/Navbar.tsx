@@ -16,37 +16,39 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
+  
   const navItems = [{
     id: 'home',
-    label: 'الرئيسية',
+    label: t('nav.home'),
     icon: Home
   }, {
     id: 'favorites',
-    label: 'المفضلة',
+    label: t('nav.favorites'),
     icon: Star
   }, {
     id: 'performance',
-    label: 'أداء التوصيات',
+    label: t('performance.title'),
     icon: BarChart3
   }, {
     id: 'analysis',
-    label: 'تحليلات اليوم',
+    label: t('analysis.title'),
     icon: TrendingUp
   }, {
     id: 'news',
-    label: 'الأخبار المالية',
+    label: t('nav.news'),
     icon: Newspaper
   }, {
     id: 'notifications',
-    label: 'التنبيهات',
+    label: t('nav.notifications'),
     icon: Bell
   }, {
     id: 'subscriptions',
-    label: 'الباقات',
+    label: t('nav.subscription'),
     icon: Crown
   }, {
     id: 'profile',
-    label: 'الحساب',
+    label: t('nav.profile'),
     icon: User
   }];
   const handleLogout = async () => {
@@ -92,7 +94,7 @@ const Navbar: React.FC<NavbarProps> = ({
                   <Search className="w-5 h-5 text-gray-400" />
                 </button> : <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input type="text" placeholder="ابحث عن سهم..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" autoFocus />
+                  <input type="text" placeholder={t('common.search')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" autoFocus />
                   <button onClick={() => {
                 setIsSearchOpen(false);
                 setSearchQuery('');
@@ -111,7 +113,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>)}
             <button onClick={handleLogout} className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
               <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">خروج</span>
+              <span className="text-sm font-medium">{t('common.logout')}</span>
             </button>
           </div>
 
@@ -133,7 +135,7 @@ const Navbar: React.FC<NavbarProps> = ({
               </button>)}
             <button onClick={handleLogout} className="flex items-center space-x-3 w-full px-3 py-2 rounded-lg text-base font-medium text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
               <LogOut className="w-5 h-5" />
-              <span>خروج</span>
+              <span>{t('common.logout')}</span>
             </button>
           </div>
         </div>}

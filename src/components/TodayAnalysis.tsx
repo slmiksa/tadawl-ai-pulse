@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, AlertTriangle, Target, Clock, DollarSign, RefreshCw } from 'lucide-react';
 import { useStocksList } from '@/hooks/useStocksList';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const TodayAnalysis: React.FC = () => {
+  const { t } = useLanguage();
   const { stocks: usStocks, loading: usLoading } = useStocksList('us');
   const { stocks: saudiStocks, loading: saudiLoading } = useStocksList('saudi');
   const [marketOverview, setMarketOverview] = useState({
@@ -126,9 +128,9 @@ const TodayAnalysis: React.FC = () => {
   const getMarketStatus = (status: string) => {
     switch (status) {
       case 'open':
-        return { text: 'مفتوح', color: 'text-green-400' };
+        return { text: t('analysis.open'), color: 'text-green-400' };
       case 'closed':
-        return { text: 'مغلق', color: 'text-red-400' };
+        return { text: t('analysis.closed'), color: 'text-red-400' };
       default:
         return { text: 'غير محدد', color: 'text-gray-400' };
     }
@@ -187,12 +189,12 @@ const TodayAnalysis: React.FC = () => {
         <div className="flex items-center justify-center space-x-3 mb-4">
           <TrendingUp className="w-8 h-8 text-purple-400" />
           <h1 className="text-3xl font-bold text-white">
-            تحليلات اليوم
+            {t('analysis.title')}
           </h1>
           {isLoading && <RefreshCw className="w-6 h-6 animate-spin text-blue-400" />}
         </div>
         <p className="text-gray-400">
-          أقوى الفرص والتحليلات للأسواق المالية اليوم - بيانات حقيقية
+          {t('analysis.subtitle')}
         </p>
       </div>
 
@@ -200,24 +202,24 @@ const TodayAnalysis: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">السوق الأمريكي</h2>
+            <h2 className="text-xl font-bold text-white">{t('analysis.usMarket')}</h2>
             <span className="text-2xl">🇺🇸</span>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">الحالة</span>
+              <span className="text-gray-400">{t('analysis.status')}</span>
               <span className={getMarketStatus(marketOverview.usMarket.status).color}>
                 {getMarketStatus(marketOverview.usMarket.status).text}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">التغيير</span>
+              <span className="text-gray-400">{t('analysis.change')}</span>
               <span className={marketOverview.usMarket.change >= 0 ? 'text-green-400' : 'text-red-400'}>
                 {marketOverview.usMarket.change >= 0 ? '+' : ''}{marketOverview.usMarket.change}%
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">حجم التداول</span>
+              <span className="text-gray-400">{t('analysis.volume')}</span>
               <span className="text-white">{marketOverview.usMarket.volume}</span>
             </div>
           </div>
@@ -225,24 +227,24 @@ const TodayAnalysis: React.FC = () => {
 
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-white">السوق السعودي</h2>
+            <h2 className="text-xl font-bold text-white">{t('analysis.saudiMarket')}</h2>
             <span className="text-2xl">🇸🇦</span>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">الحالة</span>
+              <span className="text-gray-400">{t('analysis.status')}</span>
               <span className={getMarketStatus(marketOverview.saudiMarket.status).color}>
                 {getMarketStatus(marketOverview.saudiMarket.status).text}
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">التغيير</span>
+              <span className="text-gray-400">{t('analysis.change')}</span>
               <span className={marketOverview.saudiMarket.change >= 0 ? 'text-green-400' : 'text-red-400'}>
                 {marketOverview.saudiMarket.change >= 0 ? '+' : ''}{marketOverview.saudiMarket.change}%
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-gray-400">حجم التداول</span>
+              <span className="text-gray-400">{t('analysis.volume')}</span>
               <span className="text-white">{marketOverview.saudiMarket.volume}</span>
             </div>
           </div>
@@ -253,12 +255,12 @@ const TodayAnalysis: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
         <h2 className="text-xl font-bold text-white mb-6 flex items-center">
           <Target className="w-6 h-6 mr-3 text-purple-400" />
-          أقوى الفرص اليوم - بيانات حقيقية
+          {t('analysis.opportunities')}
         </h2>
         {isLoading ? (
           <div className="text-center py-8">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-400" />
-            <p className="text-gray-400">جارٍ تحميل الفرص...</p>
+            <p className="text-gray-400">{t('analysis.loading')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -278,7 +280,7 @@ const TodayAnalysis: React.FC = () => {
                               {opportunity.symbol}
                             </button>
                             <span className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded">
-                              {opportunity.market === 'us' ? 'أمريكي' : 'سعودي'}
+                              {opportunity.market === 'us' ? t('stock.us') : t('stock.saudi')}
                             </span>
                           </div>
                           <p className="text-sm text-gray-400">{opportunity.name}</p>
@@ -315,7 +317,7 @@ const TodayAnalysis: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-6 flex items-center">
           <AlertTriangle className="w-6 h-6 mr-3 text-yellow-400" />
-          تحديثات النظام
+          {t('analysis.systemUpdates')}
         </h2>
         <div className="space-y-4">
           {systemUpdates.map((update, index) => (
@@ -330,8 +332,8 @@ const TodayAnalysis: React.FC = () => {
                 update.impact === 'negative' ? 'bg-red-500/20 text-red-400' :
                 'bg-gray-500/20 text-gray-400'
               }`}>
-                {update.impact === 'positive' ? 'إيجابي' :
-                 update.impact === 'negative' ? 'سلبي' : 'محايد'}
+                {update.impact === 'positive' ? t('analysis.positive') :
+                 update.impact === 'negative' ? t('analysis.negative') : t('analysis.neutral')}
               </span>
             </div>
           ))}

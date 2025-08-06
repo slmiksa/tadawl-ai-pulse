@@ -2,8 +2,10 @@
 import React from 'react';
 import { BarChart3, TrendingUp, Target, Award, Clock } from 'lucide-react';
 import { useStocksList } from '@/hooks/useStocksList';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const Performance: React.FC = () => {
+  const { t } = useLanguage();
   const { stocks: usStocks } = useStocksList('us');
   const { stocks: saudiStocks } = useStocksList('saudi');
   
@@ -81,11 +83,11 @@ const Performance: React.FC = () => {
         <div className="flex items-center justify-center space-x-3 mb-4">
           <BarChart3 className="w-8 h-8 text-purple-400" />
           <h1 className="text-3xl font-bold text-white">
-            أداء التوصيات
+            {t('performance.title')}
           </h1>
         </div>
         <p className="text-gray-400">
-          إحصائيات شاملة لأداء الذكاء الاصطناعي
+          {t('performance.subtitle')}
         </p>
       </div>
 
@@ -94,7 +96,7 @@ const Performance: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">إجمالي التوصيات</p>
+              <p className="text-sm text-gray-400">{t('performance.totalRecommendations')}</p>
               <p className="text-2xl font-bold text-white">{overallStats.totalRecommendations}</p>
             </div>
             <Target className="w-8 h-8 text-purple-400" />
@@ -103,7 +105,7 @@ const Performance: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">التوصيات الناجحة</p>
+              <p className="text-sm text-gray-400">{t('performance.successfulRecommendations')}</p>
               <p className="text-2xl font-bold text-green-400">{overallStats.successfulRecommendations}</p>
             </div>
             <Award className="w-8 h-8 text-green-400" />
@@ -112,7 +114,7 @@ const Performance: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">نسبة الدقة</p>
+              <p className="text-sm text-gray-400">{t('performance.accuracy')}</p>
               <p className="text-2xl font-bold text-blue-400">{overallStats.avgAccuracy}%</p>
             </div>
             <BarChart3 className="w-8 h-8 text-blue-400" />
@@ -121,7 +123,7 @@ const Performance: React.FC = () => {
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-400">إجمالي الربح</p>
+              <p className="text-sm text-gray-400">{t('performance.totalProfit')}</p>
               <p className="text-2xl font-bold text-yellow-400">{overallStats.totalProfit}%</p>
             </div>
             <TrendingUp className="w-8 h-8 text-yellow-400" />
@@ -133,17 +135,17 @@ const Performance: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
         <h2 className="text-xl font-bold text-white mb-4 flex items-center">
           <Clock className="w-6 h-6 mr-3 text-purple-400" />
-          الأداء خلال الأيام الماضية
+          {t('performance.recentDays')}
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-700">
-                <th className="text-right py-3 px-4 text-gray-400">التاريخ</th>
-                <th className="text-right py-3 px-4 text-gray-400">التوصيات</th>
-                <th className="text-right py-3 px-4 text-gray-400">الناجحة</th>
-                <th className="text-right py-3 px-4 text-gray-400">نسبة الدقة</th>
-                <th className="text-right py-3 px-4 text-gray-400">الأداء</th>
+                <th className="text-right py-3 px-4 text-gray-400">{t('performance.date')}</th>
+                <th className="text-right py-3 px-4 text-gray-400">{t('performance.recommendations')}</th>
+                <th className="text-right py-3 px-4 text-gray-400">{t('performance.successful')}</th>
+                <th className="text-right py-3 px-4 text-gray-400">{t('performance.accuracy')}</th>
+                <th className="text-right py-3 px-4 text-gray-400">{t('performance.performance')}</th>
               </tr>
             </thead>
             <tbody>
@@ -184,7 +186,7 @@ const Performance: React.FC = () => {
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-4 flex items-center">
           <Award className="w-6 h-6 mr-3 text-yellow-400" />
-          أفضل الأسهم أداءً هذا الأسبوع
+          {t('performance.topPerformers')}
         </h2>
         <div className="space-y-4">
           {topPerformers.map((stock, index) => (
@@ -200,7 +202,7 @@ const Performance: React.FC = () => {
               </div>
               <div className="text-right">
                 <p className="text-green-400 font-bold text-lg">+{stock.profit}%</p>
-                <p className="text-gray-400 text-sm">{stock.trades} توصية</p>
+                <p className="text-gray-400 text-sm">{stock.trades} {t('performance.recommendation')}</p>
               </div>
             </div>
           ))}
