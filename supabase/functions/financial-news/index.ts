@@ -1,8 +1,11 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const finnhubApiKey = Deno.env.get('FINNHUB_API_KEY');
 const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+const supabaseUrl = Deno.env.get('SUPABASE_URL');
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,9 +56,9 @@ async function translateNews(articles: FinnhubNews[]): Promise<TranslatedNews[]>
 
   const translatedArticles: TranslatedNews[] = [];
   
-  // Process articles in batches of 3 to avoid rate limits
-  for (let i = 0; i < Math.min(articles.length, 9); i += 3) {
-    const batch = articles.slice(i, i + 3);
+    // Process articles in batches of 5 to avoid rate limits
+    for (let i = 0; i < Math.min(articles.length, 20); i += 5) {
+    const batch = articles.slice(i, i + 5);
     
     try {
       const prompt = `Please translate the following financial news to Arabic. Keep the translation professional and accurate. Return only a JSON array with the same structure but translated text:
@@ -120,7 +123,7 @@ Requirements:
       }
       
       // Add delay between batches to respect rate limits
-      if (i + 3 < Math.min(articles.length, 9)) {
+      if (i + 5 < Math.min(articles.length, 20)) {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
       
@@ -147,6 +150,46 @@ Requirements:
   return translatedArticles;
 }
 
+async function saveNewsToDatabase(newsArticles: TranslatedNews[]) {
+  if (!supabaseUrl || !supabaseServiceKey) {
+    console.log('⚠️ Supabase credentials not found, skipping database save');
+    return;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  console.log(`💾 Saving ${newsArticles.length} articles to database...`);
+  
+  for (const article of newsArticles) {
+    try {
+      const { error } = await supabase
+        .from('news_articles')
+        .upsert({
+          article_id: article.id,
+          title: article.title,
+          summary: article.summary,
+          content: article.content,
+          source: article.source,
+          published_at: article.publishedAt,
+          image_url: article.imageUrl,
+          url: article.url,
+          category: article.category,
+          symbol: article.symbol
+        }, {
+          onConflict: 'article_id'
+        });
+
+      if (error) {
+        console.error('Error saving article:', error);
+      }
+    } catch (err) {
+      console.error('Error saving article to database:', err);
+    }
+  }
+  
+  console.log('✅ News articles saved to database');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -154,6 +197,9 @@ serve(async (req) => {
   }
 
   try {
+    const url = new URL(req.url);
+    const isBackgroundUpdate = url.searchParams.get('background') === 'true';
+    
     console.log('📰 Fetching financial news from Finnhub...');
     
     if (!finnhubApiKey) {
@@ -179,7 +225,7 @@ serve(async (req) => {
     
     console.log(`✅ Retrieved ${newsData.length} news articles`);
 
-    // Filter valid news data
+    // Filter valid news data and get more articles
     const validNews = newsData
       .filter(article => 
         article.headline && 
@@ -187,12 +233,25 @@ serve(async (req) => {
         article.image && 
         article.datetime > 0
       )
-      .slice(0, 15); // Get more articles for better selection
+      .slice(0, 25); // Get more articles for better selection
 
     console.log(`🔄 Translating ${validNews.length} articles to Arabic...`);
     
     // Translate news to Arabic
     const translatedNews = await translateNews(validNews);
+
+    // Save to database if this is a background update
+    if (isBackgroundUpdate) {
+      await saveNewsToDatabase(translatedNews);
+      
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: 'News updated in background',
+        total: translatedNews.length 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     console.log(`📰 Returning ${translatedNews.length} translated news articles`);
 
