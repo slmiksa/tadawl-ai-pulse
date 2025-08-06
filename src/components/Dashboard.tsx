@@ -3,11 +3,13 @@ import StockCard from './StockCard';
 import StockDetails from './StockDetails';
 import MarketSelector from './MarketSelector';
 import { useStocksList } from '@/hooks/useStocksList';
+import { useFavorites } from '@/hooks/useFavorites';
 import { TrendingUp, TrendingDown, DollarSign, Clock, RefreshCw } from 'lucide-react';
+
 const Dashboard = () => {
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'us' | 'saudi'>('all');
-  const [favorites, setFavorites] = useState<string[]>(['AAPL', '2222.SR']);
   const [selectedStock, setSelectedStock] = useState<any>(null);
+  const { toggleFavorite, isFavorite } = useFavorites();
   const {
     stocks,
     loading,
@@ -16,7 +18,7 @@ const Dashboard = () => {
   } = useStocksList(selectedMarket);
   const filteredStocks = stocks;
   const handleToggleFavorite = (symbol: string) => {
-    setFavorites(prev => prev.includes(symbol) ? prev.filter(fav => fav !== symbol) : [...prev, symbol]);
+    toggleFavorite(symbol);
   };
   const handleViewDetails = (stockData: any) => {
     setSelectedStock(stockData);
@@ -25,7 +27,7 @@ const Dashboard = () => {
     setSelectedStock(null);
   };
   if (selectedStock) {
-    return <StockDetails {...selectedStock} isFavorite={favorites.includes(selectedStock.symbol)} onToggleFavorite={handleToggleFavorite} onBack={handleBackToDashboard} />;
+    return <StockDetails {...selectedStock} isFavorite={isFavorite(selectedStock.symbol)} onToggleFavorite={handleToggleFavorite} onBack={handleBackToDashboard} />;
   }
 
   // Calculate statistics
@@ -106,7 +108,7 @@ const Dashboard = () => {
             <button onClick={refreshStocks} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
               إعادة المحاولة
             </button>
-          </div> : filteredStocks.map(stock => <StockCard key={stock.symbol} {...stock} isFavorite={favorites.includes(stock.symbol)} onToggleFavorite={handleToggleFavorite} onViewDetails={handleViewDetails} />)}
+          </div> : filteredStocks.map(stock => <StockCard key={stock.symbol} {...stock} isFavorite={isFavorite(stock.symbol)} onToggleFavorite={handleToggleFavorite} onViewDetails={handleViewDetails} />)}
       </div>
     </div>;
 };
