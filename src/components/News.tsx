@@ -36,16 +36,39 @@ export default function News() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const fetchNews = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
+  const fetchNewsFromDatabase = async (): Promise<NewsArticle[]> => {
     try {
-      console.log('📰 Fetching financial news...');
-      
+      const { data, error } = await supabase
+        .from('news_articles')
+        .select('*')
+        .order('published_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Error fetching news from database:', error);
+        return [];
+      }
+
+      return data?.map(article => ({
+        id: article.article_id,
+        title: article.title,
+        summary: article.summary || '',
+        content: article.content || '',
+        source: article.source || '',
+        publishedAt: article.published_at || '',
+        imageUrl: article.image_url || '',
+        url: article.url || '',
+        category: article.category || 'general',
+        symbol: article.symbol || null
+      } as NewsArticle)) || [];
+    } catch (error) {
+      console.error('Error:', error);
+      return [];
+    }
+  };
+
+  const fetchNewsFromAPI = async (): Promise<NewsArticle[]> => {
+    try {
       const { data, error } = await supabase.functions.invoke('financial-news');
       
       if (error) {
@@ -58,13 +81,39 @@ export default function News() {
         throw new Error(response.error || 'فشل في جلب الأخبار');
       }
 
-      setNews(response.news);
-      console.log(`✅ Loaded ${response.news.length} news articles`);
+      return response.news;
+    } catch (error) {
+      console.error('Error fetching news from API:', error);
+      throw error;
+    }
+  };
+
+  const fetchNews = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      console.log('📰 Fetching financial news...');
+      
+      // First try to get news from database
+      let articles = await fetchNewsFromDatabase();
+      
+      // If no articles in database or force refresh, fetch from API
+      if (articles.length === 0 || isRefresh) {
+        console.log('Fetching fresh news from API...');
+        articles = await fetchNewsFromAPI();
+      }
+
+      setNews(articles);
+      console.log(`✅ Loaded ${articles.length} news articles`);
       
       if (isRefresh) {
         toast({
           title: "تم تحديث الأخبار",
-          description: `تم جلب ${response.news.length} خبر جديد`,
+          description: `تم جلب ${articles.length} خبر جديد`,
         });
       }
 
@@ -84,6 +133,10 @@ export default function News() {
   useEffect(() => {
     fetchNews();
   }, []);
+
+  const handleRefresh = () => {
+    fetchNews(true);
+  };
 
   const handleReadMore = (article: NewsArticle) => {
     setSelectedArticle(article);
