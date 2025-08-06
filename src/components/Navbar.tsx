@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X, Crown, LogOut } from 'lucide-react';
+import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X, Crown, LogOut, Newspaper } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,6 +21,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeTab, onTabChange }) => {
     { id: 'favorites', label: 'المفضلة', icon: Star },
     { id: 'performance', label: 'أداء التوصيات', icon: BarChart3 },
     { id: 'analysis', label: 'تحليلات اليوم', icon: TrendingUp },
+    { id: 'news', label: 'الأخبار المالية', icon: Newspaper },
     { id: 'notifications', label: 'التنبيهات', icon: Bell },
     { id: 'subscriptions', label: 'الباقات', icon: Crown },
     { id: 'profile', label: 'الحساب', icon: User },

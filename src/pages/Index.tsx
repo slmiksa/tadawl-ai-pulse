@@ -9,6 +9,7 @@ import Dashboard from '../components/Dashboard';
 import Favorites from '../components/Favorites';
 import Performance from '../components/Performance';
 import TodayAnalysis from '../components/TodayAnalysis';
+import News from '../components/News';
 import Notifications from '../components/Notifications';
 import Profile from '../components/Profile';
 import Subscriptions from '../components/Subscriptions';
@@ -103,6 +104,8 @@ const Index = () => {
         return <Performance />;
       case 'analysis':
         return <TodayAnalysis />;
+      case 'news':
+        return <News />;
       case 'notifications':
         return <Notifications />;
       case 'profile':
