@@ -7,7 +7,6 @@ import { ExternalLink, Calendar, Globe, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import NewsModal from './NewsModal';
-
 interface NewsArticle {
   id: string;
   title: string;
@@ -20,35 +19,33 @@ interface NewsArticle {
   category: string;
   symbol?: string | null;
 }
-
 interface NewsResponse {
   success: boolean;
   news: NewsArticle[];
   total: number;
   error?: string;
 }
-
 export default function News() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const fetchNewsFromDatabase = async (): Promise<NewsArticle[]> => {
     try {
-      const { data, error } = await supabase
-        .from('news_articles')
-        .select('*')
-        .order('published_at', { ascending: false })
-        .limit(20);
-
+      const {
+        data,
+        error
+      } = await supabase.from('news_articles').select('*').order('published_at', {
+        ascending: false
+      }).limit(20);
       if (error) {
         console.error('Error fetching news from database:', error);
         return [];
       }
-
       return data?.map(article => ({
         id: article.article_id,
         title: article.title,
@@ -60,99 +57,86 @@ export default function News() {
         url: article.url || '',
         category: article.category || 'general',
         symbol: article.symbol || null
-      } as NewsArticle)) || [];
+      }) as NewsArticle) || [];
     } catch (error) {
       console.error('Error:', error);
       return [];
     }
   };
-
   const fetchNewsFromAPI = async (): Promise<NewsArticle[]> => {
     try {
-      const { data, error } = await supabase.functions.invoke('financial-news');
-      
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('financial-news');
       if (error) {
         throw error;
       }
-
       const response: NewsResponse = data;
-      
       if (!response.success) {
         throw new Error(response.error || 'فشل في جلب الأخبار');
       }
-
       return response.news;
     } catch (error) {
       console.error('Error fetching news from API:', error);
       throw error;
     }
   };
-
   const fetchNews = async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
     } else {
       setLoading(true);
     }
-
     try {
       console.log('📰 Fetching financial news...');
-      
+
       // First try to get news from database
       let articles = await fetchNewsFromDatabase();
-      
+
       // If no articles in database or force refresh, fetch from API
       if (articles.length === 0 || isRefresh) {
         console.log('Fetching fresh news from API...');
         articles = await fetchNewsFromAPI();
       }
-
       setNews(articles);
       console.log(`✅ Loaded ${articles.length} news articles`);
-      
       if (isRefresh) {
         toast({
           title: "تم تحديث الأخبار",
-          description: `تم جلب ${articles.length} خبر جديد`,
+          description: `تم جلب ${articles.length} خبر جديد`
         });
       }
-
     } catch (error) {
       console.error('❌ Error fetching news:', error);
       toast({
         title: "خطأ في جلب الأخبار",
         description: "فشل في جلب الأخبار المالية. يرجى المحاولة مرة أخرى.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   };
-
   useEffect(() => {
     fetchNews();
   }, []);
-
   const handleRefresh = () => {
     fetchNews(true);
   };
-
   const handleReadMore = (article: NewsArticle) => {
     setSelectedArticle(article);
     setIsModalOpen(true);
   };
-
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedArticle(null);
   };
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
     if (diffInHours < 1) {
       return 'الآن';
     } else if (diffInHours < 24) {
@@ -162,7 +146,6 @@ export default function News() {
       return `منذ ${diffInDays} يوم`;
     }
   };
-
   const getCategoryBadgeColor = (category: string) => {
     switch (category.toLowerCase()) {
       case 'general':
@@ -177,7 +160,6 @@ export default function News() {
         return 'bg-muted/20 text-muted-foreground';
     }
   };
-
   const getCategoryName = (category: string) => {
     switch (category.toLowerCase()) {
       case 'general':
@@ -192,10 +174,8 @@ export default function News() {
         return category;
     }
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-6">
+    return <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-6">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -206,8 +186,9 @@ export default function News() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 9 }).map((_, index) => (
-              <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50">
+            {Array.from({
+            length: 9
+          }).map((_, index) => <Card key={index} className="bg-card/50 backdrop-blur-sm border-border/50">
                 <CardHeader className="p-0">
                   <Skeleton className="h-48 w-full rounded-t-lg" />
                 </CardHeader>
@@ -224,16 +205,12 @@ export default function News() {
                     <Skeleton className="h-8 w-20" />
                   </div>
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-6">
+  return <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/10 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -241,39 +218,21 @@ export default function News() {
             <h1 className="text-3xl font-bold text-foreground mb-2">الأخبار المالية</h1>
             <p className="text-muted-foreground">آخر الأخبار والتحديثات من الأسواق المالية العالمية</p>
           </div>
-          <Button 
-            onClick={() => fetchNews(true)}
-            disabled={refreshing}
-            variant="outline"
-            size="sm"
-            className="gap-2"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            تحديث
-          </Button>
+          
         </div>
 
         {/* News Grid */}
-        {news.length === 0 ? (
-          <div className="text-center py-12">
+        {news.length === 0 ? <div className="text-center py-12">
             <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">لا توجد أخبار متاحة</h3>
             <p className="text-muted-foreground">يرجى المحاولة مرة أخرى لاحقاً</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {news.map((article) => (
-              <Card key={article.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 group">
+          </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {news.map(article => <Card key={article.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/30 transition-all duration-300 group">
                 <CardHeader className="p-0">
                   <div className="relative overflow-hidden rounded-t-lg">
-                    <img 
-                      src={article.imageUrl} 
-                      alt={article.title}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
+                    <img src={article.imageUrl} alt={article.title} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300" onError={e => {
+                e.currentTarget.src = '/placeholder.svg';
+              }} />
                     <div className="absolute top-3 right-3">
                       <Badge className={getCategoryBadgeColor(article.category)}>
                         {getCategoryName(article.category)}
@@ -301,33 +260,19 @@ export default function News() {
                   </p>
                   
                   <div className="flex items-center justify-between">
-                    {article.symbol && (
-                      <Badge variant="outline" className="text-xs">
+                    {article.symbol && <Badge variant="outline" className="text-xs">
                         {article.symbol}
-                      </Badge>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleReadMore(article)}
-                      className="ml-auto gap-1 hover:bg-primary/10"
-                    >
+                      </Badge>}
+                    <Button variant="ghost" size="sm" onClick={() => handleReadMore(article)} className="ml-auto gap-1 hover:bg-primary/10">
                       اقرأ المزيد
                       <ExternalLink className="w-3 h-3" />
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+              </Card>)}
+          </div>}
         
-        <NewsModal 
-          article={selectedArticle}
-          isOpen={isModalOpen}
-          onClose={closeModal}
-        />
+        <NewsModal article={selectedArticle} isOpen={isModalOpen} onClose={closeModal} />
       </div>
-    </div>
-  );
+    </div>;
 }
