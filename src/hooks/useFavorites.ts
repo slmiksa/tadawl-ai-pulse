@@ -103,11 +103,6 @@ export const useFavorites = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        toast({
-          title: "خطأ",
-          description: "يجب تسجيل الدخول أولاً",
-          variant: "destructive",
-        });
         return;
       }
 
@@ -148,11 +143,6 @@ export const useFavorites = () => {
         .single();
 
       if (!stock) {
-        toast({
-          title: "خطأ",
-          description: "لم يتم العثور على السهم",
-          variant: "destructive",
-        });
         return;
       }
 
@@ -170,11 +160,6 @@ export const useFavorites = () => {
           .from('watchlist_stocks')
           .delete()
           .eq('id', existingEntry.id);
-
-        toast({
-          title: "تم الإزالة",
-          description: "تم إزالة السهم من المفضلة",
-        });
       } else {
         // Add to favorites
         await supabase
@@ -183,22 +168,12 @@ export const useFavorites = () => {
             watchlist_id: watchlistId,
             stock_id: stock.id
           });
-
-        toast({
-          title: "تم الإضافة",
-          description: "تم إضافة السهم إلى المفضلة",
-        });
       }
 
       // Refresh favorites
       fetchFavorites();
     } catch (err) {
       console.error('Error toggling favorite:', err);
-      toast({
-        title: "خطأ",
-        description: "حدث خطأ في تحديث المفضلة",
-        variant: "destructive",
-      });
     }
   };
 
