@@ -8,6 +8,7 @@ interface LanguageContextType {
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
   isRTL: boolean;
+  isLoading: boolean;
 }
 
 const translations = {
@@ -327,6 +328,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>('ar');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load language from user settings or localStorage
@@ -351,6 +353,8 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       } catch (error) {
         console.error('Error loading language:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -395,7 +399,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [language, isRTL]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, isRTL, isLoading }}>
       {children}
     </LanguageContext.Provider>
   );

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useLanguage } from '@/contexts/LanguageContext';
 import Navbar from '../components/Navbar';
 import Dashboard from '../components/Dashboard';
 import Favorites from '../components/Favorites';
@@ -16,6 +17,7 @@ import Subscriptions from '../components/Subscriptions';
 import SubscriptionRequiredModal from '../components/SubscriptionRequiredModal';
 
 const Index = () => {
+  const { isLoading: languageLoading } = useLanguage();
   const [activeTab, setActiveTab] = useState('home');
   const [user, setUser] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
@@ -115,7 +117,7 @@ const Index = () => {
     }
   };
 
-  if (!user) {
+  if (!user || languageLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
