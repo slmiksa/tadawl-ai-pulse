@@ -13,3 +13,6 @@ enable_confirmations = false
 
 [functions.stock-data]
 verify_jwt = false
+
+[functions.financial-news]
+verify_jwt = false
