@@ -1,51 +1,19 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import StockCard from './StockCard';
-import { Star, TrendingUp } from 'lucide-react';
+import { Star, TrendingUp, RefreshCw } from 'lucide-react';
+import { useFavorites } from '@/hooks/useFavorites';
+import { Button } from '@/components/ui/button';
 
 const Favorites: React.FC = () => {
-  const [favorites, setFavorites] = useState<string[]>(['AAPL', 'TSLA', '2222.SR']);
-
-  // Mock data for favorite stocks
-  const favoriteStocks = [
-    {
-      symbol: 'AAPL',
-      name: 'Apple Inc.',
-      price: 175.84,
-      change: 2.34,
-      changePercent: 1.35,
-      recommendation: 'buy' as const,
-      reason: 'مؤشر RSI في منطقة الشراء مع كسر مستوى المقاومة عند 174. حجم التداول مرتفع.',
-      market: 'us' as const,
-    },
-    {
-      symbol: 'TSLA',
-      name: 'Tesla Inc.',
-      price: 248.50,
-      change: -5.20,
-      changePercent: -2.05,
-      recommendation: 'sell' as const,
-      reason: 'انخفاض تحت المتوسط المتحرك 50 يوم. مؤشر MACD يظهر إشارة بيع قوية.',
-      market: 'us' as const,
-    },
-    {
-      symbol: '2222.SR',
-      name: 'أرامكو السعودية',
-      price: 28.50,
-      change: 0.75,
-      changePercent: 2.70,
-      recommendation: 'buy' as const,
-      reason: 'كسر مستوى المقاومة عند 28.20 بحجم تداول عالي. مؤشر RSI إيجابي.',
-      market: 'saudi' as const,
-    },
-  ];
-
-  const toggleFavorite = (symbol: string) => {
-    setFavorites(prev => prev.filter(s => s !== symbol));
-  };
+  const { favorites, loading, error, fetchFavorites, toggleFavorite } = useFavorites();
 
   const handleViewDetails = (symbol: string) => {
     console.log('Viewing details for:', symbol);
+  };
+
+  const handleRefresh = () => {
+    fetchFavorites();
   };
 
   return (
@@ -58,9 +26,20 @@ const Favorites: React.FC = () => {
             الأسهم المفضلة
           </h1>
         </div>
-        <p className="text-gray-400">
-          متابعة سريعة للأسهم التي تهمك
-        </p>
+        <div className="flex items-center justify-center gap-4">
+          <p className="text-gray-400">
+            متابعة سريعة للأسهم التي تهمك
+          </p>
+          <Button 
+            onClick={handleRefresh} 
+            variant="ghost" 
+            size="sm"
+            disabled={loading}
+            className="h-8 px-3"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -69,7 +48,7 @@ const Favorites: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">إجمالي المفضلة</p>
-              <p className="text-2xl font-bold text-white">{favoriteStocks.length}</p>
+              <p className="text-2xl font-bold text-white">{favorites.length}</p>
             </div>
             <Star className="w-8 h-8 text-yellow-400" />
           </div>
@@ -79,7 +58,7 @@ const Favorites: React.FC = () => {
             <div>
               <p className="text-sm text-gray-400">أسهم رابحة</p>
               <p className="text-2xl font-bold text-green-400">
-                {favoriteStocks.filter(s => s.change > 0).length}
+                {favorites.filter(s => s.change > 0).length}
               </p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-400" />
@@ -90,7 +69,7 @@ const Favorites: React.FC = () => {
             <div>
               <p className="text-sm text-gray-400">توصيات شراء</p>
               <p className="text-2xl font-bold text-purple-400">
-                {favoriteStocks.filter(s => s.recommendation === 'buy').length}
+                {favorites.filter(s => s.recommendation === 'buy').length}
               </p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-400" />
@@ -98,10 +77,27 @@ const Favorites: React.FC = () => {
         </div>
       </div>
 
-      {/* Favorites Grid */}
-      {favoriteStocks.length > 0 ? (
+      {/* Content */}
+      {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {favoriteStocks.map((stock) => (
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-gray-800 rounded-lg p-6 border border-gray-700 animate-pulse">
+              <div className="h-6 bg-gray-700 rounded mb-4"></div>
+              <div className="h-8 bg-gray-700 rounded mb-2"></div>
+              <div className="h-4 bg-gray-700 rounded w-2/3"></div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="text-center py-16">
+          <p className="text-red-400 mb-4">{error}</p>
+          <Button onClick={handleRefresh} variant="outline">
+            إعادة المحاولة
+          </Button>
+        </div>
+      ) : favorites.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {favorites.map((stock) => (
             <StockCard
               key={stock.symbol}
               symbol={stock.symbol}
@@ -112,6 +108,9 @@ const Favorites: React.FC = () => {
               recommendation={stock.recommendation}
               reason={stock.reason}
               market={stock.market}
+              volume={stock.volume}
+              high={stock.high}
+              low={stock.low}
               isFavorite={true}
               onToggleFavorite={toggleFavorite}
               onViewDetails={handleViewDetails}
@@ -125,7 +124,7 @@ const Favorites: React.FC = () => {
             لا توجد أسهم مفضلة
           </h3>
           <p className="text-gray-500">
-            أضف أسهمًا إلى المفضلة لمتابعتها بسهولة
+            أضف أسهمًا إلى المفضلة لمتابعتها بسهولة من صفحة الرئيسية
           </p>
         </div>
       )}
