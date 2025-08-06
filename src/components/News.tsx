@@ -6,11 +6,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, Calendar, Globe, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import NewsModal from './NewsModal';
 
 interface NewsArticle {
   id: string;
   title: string;
   summary: string;
+  content: string;
   source: string;
   publishedAt: string;
   imageUrl: string;
@@ -30,6 +32,8 @@ export default function News() {
   const [news, setNews] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
 
   const fetchNews = async (isRefresh = false) => {
@@ -80,6 +84,16 @@ export default function News() {
   useEffect(() => {
     fetchNews();
   }, []);
+
+  const handleReadMore = (article: NewsArticle) => {
+    setSelectedArticle(article);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedArticle(null);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -242,13 +256,11 @@ export default function News() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      asChild
+                      onClick={() => handleReadMore(article)}
                       className="ml-auto gap-1 hover:bg-primary/10"
                     >
-                      <a href={article.url} target="_blank" rel="noopener noreferrer">
-                        اقرأ المزيد
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                      اقرأ المزيد
+                      <ExternalLink className="w-3 h-3" />
                     </Button>
                   </div>
                 </CardContent>
@@ -256,6 +268,12 @@ export default function News() {
             ))}
           </div>
         )}
+        
+        <NewsModal 
+          article={selectedArticle}
+          isOpen={isModalOpen}
+          onClose={closeModal}
+        />
       </div>
     </div>
   );
