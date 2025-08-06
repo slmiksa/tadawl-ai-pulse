@@ -21,6 +21,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('home');
   const [user, setUser] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<any>(null);
   const navigate = useNavigate();
   const { isSubscribed, loading: subscriptionLoading } = useSubscription();
   const { toast } = useToast();
@@ -68,6 +69,11 @@ const Index = () => {
     console.log('Payment gateway integration for package:', packageType);
   };
 
+  const handleStockSelect = (stock: any) => {
+    setSelectedStock(stock);
+    setActiveTab('home'); // Switch to dashboard to show stock details
+  };
+
   const renderContent = () => {
     // Allow access to subscriptions page even without subscription
     if (activeTab === 'subscriptions') {
@@ -99,7 +105,7 @@ const Index = () => {
 
     switch (activeTab) {
       case 'home':
-        return <Dashboard />;
+        return <Dashboard selectedStock={selectedStock} onClearSelection={() => setSelectedStock(null)} />;
       case 'favorites':
         return <Favorites />;
       case 'performance':
@@ -113,7 +119,7 @@ const Index = () => {
       case 'profile':
         return <Profile />;
       default:
-        return <Dashboard />;
+        return <Dashboard selectedStock={selectedStock} onClearSelection={() => setSelectedStock(null)} />;
     }
   };
 
@@ -127,7 +133,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navbar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab}
+        onStockSelect={handleStockSelect}
+      />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {renderContent()}
       </main>

@@ -3,18 +3,19 @@ import { Bell, Search, User, Star, Home, BarChart3, Settings, TrendingUp, X, Cro
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
+import SearchModal from './SearchModal';
 interface NavbarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onStockSelect?: (stock: any) => void;
 }
 const Navbar: React.FC<NavbarProps> = ({
   activeTab,
-  onTabChange
+  onTabChange,
+  onStockSelect
 }) => {
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { t } = useLanguage();
   
@@ -51,16 +52,10 @@ const Navbar: React.FC<NavbarProps> = ({
     label: t('nav.profile'),
     icon: User
   }];
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  // Close search when clicking outside
+  
+  // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-      }
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
       }
@@ -70,6 +65,16 @@ const Navbar: React.FC<NavbarProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handleStockSelect = (stock: any) => {
+    if (onStockSelect) {
+      onStockSelect(stock);
+    }
+  };
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+  
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     setIsMobileMenuOpen(false);
@@ -88,21 +93,13 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Search */}
-          <div className="flex-1 max-w-md mx-8" ref={searchRef}>
-            <div className="relative">
-              {!isSearchOpen ? <button onClick={() => setIsSearchOpen(true)} className="flex items-center justify-center w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">
-                  <Search className="w-5 h-5 text-gray-400" />
-                </button> : <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input type="text" placeholder={t('common.search')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-10 pr-10 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent" autoFocus />
-                  <button onClick={() => {
-                setIsSearchOpen(false);
-                setSearchQuery('');
-              }} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>}
-            </div>
+          <div className="flex-1 max-w-md mx-8">
+            <button
+              onClick={() => setIsSearchModalOpen(true)}
+              className="flex items-center justify-center w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              <Search className="w-5 h-5 text-gray-400" />
+            </button>
           </div>
 
           {/* Navigation Items - Desktop */}
@@ -139,6 +136,13 @@ const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
         </div>}
+      
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        onSelectStock={handleStockSelect}
+      />
     </nav>;
 };
 export default Navbar;

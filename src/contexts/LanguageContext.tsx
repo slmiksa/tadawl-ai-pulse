@@ -164,8 +164,13 @@ const translations = {
     'common.save': 'حفظ',
     'common.cancel': 'إلغاء',
     'common.refresh': 'تحديث',
-    'common.search': 'ابحث عن سهم...',
+    'common.search': 'البحث',
     'common.logout': 'خروج',
+    
+    // Search
+    'search.placeholder': 'ابحث عن سهم بالرمز أو الاسم...',
+    'search.noResults': 'لا توجد نتائج للبحث',
+    'search.popular': 'أسهم شائعة',
   },
   en: {
     // Navigation
@@ -319,8 +324,13 @@ const translations = {
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.refresh': 'Refresh',
-    'common.search': 'Search for stock...',
+    'common.search': 'Search',
     'common.logout': 'Logout',
+    
+    // Search
+    'search.placeholder': 'Search for stock by symbol or name...',
+    'search.noResults': 'No search results found',
+    'search.popular': 'Popular Stocks',
   }
 };
 

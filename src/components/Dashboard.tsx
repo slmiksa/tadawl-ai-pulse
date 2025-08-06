@@ -7,9 +7,14 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TrendingUp, TrendingDown, DollarSign, Clock, RefreshCw } from 'lucide-react';
 
-const Dashboard = () => {
+interface DashboardProps {
+  selectedStock?: any;
+  onClearSelection?: () => void;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ selectedStock, onClearSelection }) => {
   const [selectedMarket, setSelectedMarket] = useState<'all' | 'us' | 'saudi'>('all');
-  const [selectedStock, setSelectedStock] = useState<any>(null);
+  const [selectedStockLocal, setSelectedStockLocal] = useState<any>(selectedStock || null);
   const { toggleFavorite, isFavorite } = useFavorites();
   const { t } = useLanguage();
   const {
@@ -23,13 +28,37 @@ const Dashboard = () => {
     toggleFavorite(symbol);
   };
   const handleViewDetails = (stockData: any) => {
-    setSelectedStock(stockData);
+    setSelectedStockLocal(stockData);
   };
   const handleBackToDashboard = () => {
-    setSelectedStock(null);
+    setSelectedStockLocal(null);
+    if (onClearSelection) {
+      onClearSelection();
+    }
   };
-  if (selectedStock) {
-    return <StockDetails {...selectedStock} isFavorite={isFavorite(selectedStock.symbol)} onToggleFavorite={handleToggleFavorite} onBack={handleBackToDashboard} />;
+
+  // Update local state when selectedStock prop changes
+  React.useEffect(() => {
+    if (selectedStock) {
+      setSelectedStockLocal(selectedStock);
+    }
+  }, [selectedStock]);
+  if (selectedStockLocal) {
+    return (
+      <StockDetails 
+        symbol={selectedStockLocal.symbol}
+        name={selectedStockLocal.name}
+        price={selectedStockLocal.price}
+        change={selectedStockLocal.change}
+        changePercent={selectedStockLocal.changePercent}
+        recommendation={selectedStockLocal.recommendation}
+        reason={selectedStockLocal.reason}
+        market={selectedStockLocal.market}
+        isFavorite={isFavorite(selectedStockLocal.symbol)} 
+        onToggleFavorite={handleToggleFavorite} 
+        onBack={handleBackToDashboard} 
+      />
+    );
   }
 
   // Calculate statistics
