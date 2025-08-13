@@ -54,6 +54,13 @@ const Index = () => {
         navigate('/auth');
       } else if (session) {
         setUser(session.user);
+        
+        // Check for welcome modal when user signs in
+        const shouldShowWelcome = localStorage.getItem('showWelcomeModal');
+        if (shouldShowWelcome === 'true') {
+          setShowWelcomeModal(true);
+          localStorage.removeItem('showWelcomeModal');
+        }
       }
     });
 
