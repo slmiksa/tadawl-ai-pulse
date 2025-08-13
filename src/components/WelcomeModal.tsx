@@ -2,15 +2,15 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, X } from 'lucide-react';
-
 interface WelcomeModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+const WelcomeModal = ({
+  isOpen,
+  onClose
+}: WelcomeModalProps) => {
+  return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 border border-purple-500/30 text-white">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -25,12 +25,7 @@ const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
                 <p className="text-purple-300">منصة التداول الذكي</p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="text-gray-400 hover:text-white"
-            >
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
               <X className="w-5 h-5" />
             </Button>
           </div>
@@ -60,32 +55,18 @@ const WelcomeModal = ({ isOpen, onClose }: WelcomeModalProps) => {
               
               {/* Documentation Section */}
               <div className="mt-4 pt-4 border-t border-purple-500/30">
-                <div className="grid grid-cols-1 gap-2 text-sm">
-                  <div className="flex items-center justify-between bg-purple-600/10 rounded-lg px-3 py-2">
-                    <span className="text-purple-300">توثيق العمل الحر:</span>
-                    <span className="text-white font-mono">FL-679216503</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-yellow-600/10 rounded-lg px-3 py-2">
-                    <span className="text-yellow-300">توثيق المركز السعودي للأعمال:</span>
-                    <span className="text-white font-mono">0000187649</span>
-                  </div>
-                </div>
+                
               </div>
             </div>
           </div>
 
           <div className="flex justify-center">
-            <Button
-              onClick={onClose}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-2"
-            >
+            <Button onClick={onClose} className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-2">
               إغلاق
             </Button>
           </div>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default WelcomeModal;
