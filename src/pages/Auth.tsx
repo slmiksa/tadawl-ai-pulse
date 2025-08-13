@@ -116,6 +116,20 @@ const Auth = () => {
                   كانت فكرة المنصة حلم يراود منى لسنوات، حلم أن يكون للجميع أداة ذكية تساعدهم على النجاح في التداول. 
                   اليوم أصبح الحلم حقيقة، ونتمنى أن تكون هذه المنصة سببًا في نجاح كل من يستخدمها.
                 </p>
+                
+                {/* Documentation Section */}
+                <div className="mt-4 pt-4 border-t border-purple-500/30">
+                  <div className="grid grid-cols-1 gap-2 text-sm">
+                    <div className="flex items-center justify-between bg-purple-600/10 rounded-lg px-3 py-2">
+                      <span className="text-purple-300">توثيق العمل الحر:</span>
+                      <span className="text-white font-mono">FL-679216503</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-yellow-600/10 rounded-lg px-3 py-2">
+                      <span className="text-yellow-300">توثيق المركز السعودي للأعمال:</span>
+                      <span className="text-white font-mono">0000187649</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
