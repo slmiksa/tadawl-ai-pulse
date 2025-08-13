@@ -17,8 +17,9 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
-  
+  const {
+    t
+  } = useLanguage();
   const navItems = [{
     id: 'home',
     label: t('nav.home'),
@@ -52,7 +53,7 @@ const Navbar: React.FC<NavbarProps> = ({
     label: t('nav.profile'),
     icon: User
   }];
-  
+
   // Close mobile menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -65,7 +66,6 @@ const Navbar: React.FC<NavbarProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
   const handleStockSelect = (stock: any) => {
     if (onStockSelect) {
       onStockSelect(stock);
@@ -74,7 +74,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
-  
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
     setIsMobileMenuOpen(false);
@@ -94,10 +93,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
           {/* Search */}
           <div className="flex-1 max-w-md mx-8">
-            <button
-              onClick={() => setIsSearchModalOpen(true)}
-              className="flex items-center justify-center w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors"
-            >
+            <button onClick={() => setIsSearchModalOpen(true)} className="flex items-center justify-center w-10 h-10 bg-gray-800 border border-gray-700 rounded-lg hover:bg-gray-700 transition-colors">
               <Search className="w-5 h-5 text-gray-400" />
             </button>
           </div>
@@ -108,10 +104,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 <item.icon className="w-5 h-5" />
                 <span className="text-sm font-medium">{item.label}</span>
               </button>)}
-            <button onClick={handleLogout} className="flex items-center space-x-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors">
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">{t('common.logout')}</span>
-            </button>
+            
           </div>
 
           {/* Mobile Menu Button */}
@@ -138,11 +131,7 @@ const Navbar: React.FC<NavbarProps> = ({
         </div>}
       
       {/* Search Modal */}
-      <SearchModal
-        isOpen={isSearchModalOpen}
-        onClose={() => setIsSearchModalOpen(false)}
-        onSelectStock={handleStockSelect}
-      />
+      <SearchModal isOpen={isSearchModalOpen} onClose={() => setIsSearchModalOpen(false)} onSelectStock={handleStockSelect} />
     </nav>;
 };
 export default Navbar;
