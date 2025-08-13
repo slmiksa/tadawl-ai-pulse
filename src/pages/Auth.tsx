@@ -46,6 +46,9 @@ const Auth = () => {
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في منصة TadawlAI Trading"
         });
+        
+        // Mark that user should see welcome modal
+        localStorage.setItem('showWelcomeModal', 'true');
         navigate('/');
       } else {
         // Sign up
@@ -95,56 +98,17 @@ const Auth = () => {
             </div>
           </div>
 
-          <div className="space-y-8">
-            {/* Founder Story Section */}
-            <div className="bg-gradient-to-r from-purple-600/20 to-yellow-600/20 rounded-2xl p-6 border border-purple-500/30">
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-yellow-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                  م
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-white">منى العنزي</h3>
-                  <p className="text-purple-300">مؤسسة المنصة</p>
-                </div>
-              </div>
-              
-              <div className="space-y-3 text-gray-300">
-                <p className="italic text-purple-200">
-                  "أنا أختكم منى العنزي - شابة سعودية طموحة ولدي حلم"
-                </p>
-                <p className="leading-relaxed">
-                  كانت فكرة المنصة حلم يراود منى لسنوات، حلم أن يكون للجميع أداة ذكية تساعدهم على النجاح في التداول. 
-                  اليوم أصبح الحلم حقيقة، ونتمنى أن تكون هذه المنصة سببًا في نجاح كل من يستخدمها.
-                </p>
-                
-                {/* Documentation Section */}
-                <div className="mt-4 pt-4 border-t border-purple-500/30">
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div className="flex items-center justify-between bg-purple-600/10 rounded-lg px-3 py-2">
-                      <span className="text-purple-300">توثيق العمل الحر:</span>
-                      <span className="text-white font-mono">FL-679216503</span>
-                    </div>
-                    <div className="flex items-center justify-between bg-yellow-600/10 rounded-lg px-3 py-2">
-                      <span className="text-yellow-300">توثيق المركز السعودي للأعمال:</span>
-                      <span className="text-white font-mono">0000187649</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">استثمر بذكاء مع الذكاء الاصطناعي</h2>
-              <p className="text-lg text-gray-300">
-                منصة متقدمة تستخدم الذكاء الاصطناعي لتقديم تحليلات دقيقة وتوصيات استثمارية موثوقة
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {features.map((feature, index) => <div key={index} className="flex items-center space-x-3">
-                    <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
-                    <span className="text-gray-300">{feature}</span>
-                  </div>)}
-              </div>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">استثمر بذكاء مع الذكاء الاصطناعي</h2>
+            <p className="text-lg text-gray-300">
+              منصة متقدمة تستخدم الذكاء الاصطناعي لتقديم تحليلات دقيقة وتوصيات استثمارية موثوقة
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {features.map((feature, index) => <div key={index} className="flex items-center space-x-3">
+                  <Check className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-gray-300">{feature}</span>
+                </div>)}
             </div>
           </div>
         </div>

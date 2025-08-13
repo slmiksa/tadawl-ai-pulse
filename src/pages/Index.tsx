@@ -15,12 +15,14 @@ import Notifications from '../components/Notifications';
 import Profile from '../components/Profile';
 import Subscriptions from '../components/Subscriptions';
 import SubscriptionRequiredModal from '../components/SubscriptionRequiredModal';
+import WelcomeModal from '../components/WelcomeModal';
 
 const Index = () => {
   const { isLoading: languageLoading } = useLanguage();
   const [activeTab, setActiveTab] = useState('home');
   const [user, setUser] = useState(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [selectedStock, setSelectedStock] = useState<any>(null);
   const navigate = useNavigate();
   const { isSubscribed, loading: subscriptionLoading } = useSubscription();
@@ -35,6 +37,13 @@ const Index = () => {
         return;
       }
       setUser(session.user);
+      
+      // Check if welcome modal should be shown for new login
+      const shouldShowWelcome = localStorage.getItem('showWelcomeModal');
+      if (shouldShowWelcome === 'true') {
+        setShowWelcomeModal(true);
+        localStorage.removeItem('showWelcomeModal');
+      }
     };
 
     checkAuth();
@@ -146,6 +155,11 @@ const Index = () => {
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         onSubscribe={handlePaymentGateway}
+      />
+      
+      <WelcomeModal
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
       />
     </div>
   );
