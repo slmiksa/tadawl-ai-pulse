@@ -39,7 +39,8 @@ const WelcomeModal = ({
                 م
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">منى العنزي</h3>
+                <h3 className="text-xl font-bold text-white">
+              </h3>
                 <p className="text-purple-300">مؤسسة المنصة</p>
               </div>
             </div>
