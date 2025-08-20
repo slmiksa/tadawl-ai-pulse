@@ -47,7 +47,7 @@ const WelcomeModal = ({
             
             <div className="space-y-3 text-gray-300">
               <p className="italic text-purple-200">
-                "أنا أختكم منى العنزي - شابة سعودية طموحة ولدي حلم"
+                "أنا شابة سعودية طموحة ولدي حلم"
               </p>
               <p className="leading-relaxed">
                 كانت فكرة المنصة حلم يراود منى لسنوات، حلم أن يكون للجميع أداة ذكية تساعدهم على النجاح في التداول. 
