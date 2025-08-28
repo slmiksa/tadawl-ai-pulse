@@ -8,6 +8,8 @@ import './index.css';
 
 import Index from './pages/Index';
 import Auth from './pages/Auth';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
 
 const queryClient = new QueryClient();
@@ -20,6 +22,8 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/tadawladmin" element={<AdminLogin />} />
+            <Route path="/tadawladmin/dashboard" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />
