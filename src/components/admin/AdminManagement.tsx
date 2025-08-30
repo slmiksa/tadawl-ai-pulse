@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +29,7 @@ import {
   Edit,
   Crown
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
 interface Admin {
@@ -48,18 +49,119 @@ interface Permission {
   description: string;
 }
 
-const mockAdmins: Admin[] = [
-  {
-    id: '1',
-    username: 'admin',
-    email: 'admin@tadawlai.com',
-    role: 'super_admin',
-    permissions: ['all'],
-    created_at: '2024-01-01',
-    last_active: '2024-01-27',
-    status: 'active'
-  }
-];
+export const AdminManagement = () => {
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({
+    username: '',
+    email: '',
+    password: '',
+    role: 'admin' as Admin['role'],
+    permissions: [] as string[]
+  });
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  const fetchAdmins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      const mappedAdmins: Admin[] = data?.map(admin => ({
+        id: admin.id,
+        username: admin.username,
+        email: admin.email,
+        role: admin.role as Admin['role'],
+        permissions: Array.isArray(admin.permissions) ? admin.permissions as string[] : [],
+        created_at: admin.created_at,
+        last_active: admin.last_active || admin.created_at,
+        status: admin.status as Admin['status']
+      })) || [];
+      
+      setAdmins(mappedAdmins);
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل بيانات المشرفين",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    try {
+      // In a real app, you'd hash the password properly
+      const hashedPassword = `$2b$10$${newAdmin.password}`;
+      
+      const { error } = await supabase
+        .from('admins')
+        .insert({
+          username: newAdmin.username,
+          email: newAdmin.email,
+          password_hash: hashedPassword,
+          role: newAdmin.role,
+          permissions: newAdmin.permissions
+        });
+
+      if (error) throw error;
+
+      await fetchAdmins(); // Refresh the list
+      setShowAddDialog(false);
+      setNewAdmin({
+        username: '',
+        email: '',
+        password: '',
+        role: 'admin',
+        permissions: []
+      });
+
+      toast({
+        title: "تم إضافة المشرف بنجاح",
+        description: `تم إنشاء حساب جديد للمشرف ${newAdmin.username}`,
+      });
+    } catch (error) {
+      console.error('Error adding admin:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة المشرف الجديد",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteAdmin = async (adminId: string) => {
+    try {
+      const { error } = await supabase
+        .from('admins')
+        .delete()
+        .eq('id', adminId);
+
+      if (error) throw error;
+
+      await fetchAdmins(); // Refresh the list
+      toast({
+        title: "تم حذف المشرف",
+        description: "تم حذف حساب المشرف بنجاح",
+      });
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في حذف المشرف",
+        variant: "destructive",
+      });
+    }
+  };
 
 const availablePermissions: Permission[] = [
   { id: 'users_view', name: 'عرض المستخدمين', description: 'عرض قائمة المستخدمين وتفاصيلهم' },
@@ -72,53 +174,6 @@ const availablePermissions: Permission[] = [
   { id: 'apis_manage', name: 'إدارة APIs', description: 'إدارة مفاتيح واعدادات APIs' }
 ];
 
-export const AdminManagement = () => {
-  const [admins, setAdmins] = useState<Admin[]>(mockAdmins);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newAdmin, setNewAdmin] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'admin' as Admin['role'],
-    permissions: [] as string[]
-  });
-
-  const handleAddAdmin = () => {
-    const admin: Admin = {
-      id: Date.now().toString(),
-      username: newAdmin.username,
-      email: newAdmin.email,
-      role: newAdmin.role,
-      permissions: newAdmin.permissions,
-      created_at: new Date().toISOString(),
-      last_active: new Date().toISOString(),
-      status: 'active'
-    };
-
-    setAdmins([...admins, admin]);
-    setShowAddDialog(false);
-    setNewAdmin({
-      username: '',
-      email: '',
-      password: '',
-      role: 'admin',
-      permissions: []
-    });
-
-    toast({
-      title: "تم إضافة المشرف بنجاح",
-      description: `تم إنشاء حساب جديد للمشرف ${newAdmin.username}`,
-    });
-  };
-
-  const handleDeleteAdmin = (adminId: string) => {
-    setAdmins(admins.filter(admin => admin.id !== adminId));
-    toast({
-      title: "تم حذف المشرف",
-      description: "تم حذف حساب المشرف بنجاح",
-    });
-  };
-
   const togglePermission = (permissionId: string) => {
     setNewAdmin(prev => ({
       ...prev,
@@ -127,6 +182,24 @@ export const AdminManagement = () => {
         : [...prev.permissions, permissionId]
     }));
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="h-6 bg-muted rounded w-1/4 animate-pulse"></div>
+          <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-12 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const getRoleLabel = (role: Admin['role']) => {
     switch (role) {

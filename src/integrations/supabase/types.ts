@@ -7,13 +7,91 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          last_active: string | null
+          password_hash: string
+          permissions: Json | null
+          role: string
+          status: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          last_active?: string | null
+          password_hash: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          last_active?: string | null
+          password_hash?: string
+          permissions?: Json | null
+          role?: string
+          status?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      api_keys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key_value: string
+          last_used: string | null
+          name: string
+          rate_limit: number | null
+          requests_today: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_value: string
+          last_used?: string | null
+          name: string
+          rate_limit?: number | null
+          requests_today?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key_value?: string
+          last_used?: string | null
+          name?: string
+          rate_limit?: number | null
+          requests_today?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       market_data: {
         Row: {
           close_price: number | null

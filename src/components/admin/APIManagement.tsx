@@ -23,12 +23,13 @@ import {
   AlertTriangle,
   CheckCircle
 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
 interface APIKey {
   id: string;
   name: string;
-  key: string;
+  key_value: string;
   description: string;
   status: 'active' | 'inactive' | 'error';
   last_used: string;
@@ -37,88 +38,117 @@ interface APIKey {
   created_at: string;
 }
 
-const mockAPIKeys: APIKey[] = [
-  {
-    id: '1',
-    name: 'TWELVEDATA_API_KEY',
-    key: 'td_xxxxxxxxxxxxxxxxxx',
-    description: 'مفتاح API لبيانات الأسهم من TwelveData',
-    status: 'active',
-    last_used: '2024-01-27T10:30:00Z',
-    requests_today: 1250,
-    rate_limit: 5000,
-    created_at: '2024-01-01'
-  },
-  {
-    id: '2',
-    name: 'FINNHUB_API_KEY',
-    key: 'fh_xxxxxxxxxxxxxxxxxx',
-    description: 'مفتاح API لبيانات السوق من Finnhub',
-    status: 'active',
-    last_used: '2024-01-27T09:15:00Z',
-    requests_today: 850,
-    rate_limit: 3000,
-    created_at: '2024-01-01'
-  },
-  {
-    id: '3',
-    name: 'OPENAI_API_KEY',
-    key: 'sk-xxxxxxxxxxxxxxxxxx',
-    description: 'مفتاح API للذكاء الاصطناعي من OpenAI',
-    status: 'active',
-    last_used: '2024-01-27T11:45:00Z',
-    requests_today: 420,
-    rate_limit: 1000,
-    created_at: '2024-01-01'
-  }
-];
-
 export const APIManagement = () => {
-  const [apiKeys, setApiKeys] = useState<APIKey[]>(mockAPIKeys);
+  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showKeyValue, setShowKeyValue] = useState<string | null>(null);
   const [editingKey, setEditingKey] = useState<APIKey | null>(null);
   const [newKey, setNewKey] = useState({
     name: '',
-    key: '',
+    key_value: '',
     description: ''
   });
 
-  const handleAddKey = () => {
-    const apiKey: APIKey = {
-      id: Date.now().toString(),
-      name: newKey.name,
-      key: newKey.key,
-      description: newKey.description,
-      status: 'active',
-      last_used: new Date().toISOString(),
-      requests_today: 0,
-      rate_limit: 1000,
-      created_at: new Date().toISOString()
-    };
+  useEffect(() => {
+    fetchAPIKeys();
+  }, []);
 
-    setApiKeys([...apiKeys, apiKey]);
-    setShowAddDialog(false);
-    setNewKey({ name: '', key: '', description: '' });
+  const fetchAPIKeys = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    toast({
-      title: "تم إضافة مفتاح API بنجاح",
-      description: `تم حفظ مفتاح ${newKey.name} بنجاح`,
-    });
+      const mappedKeys: APIKey[] = data?.map(key => ({
+        id: key.id,
+        name: key.name,
+        key_value: key.key_value,
+        description: key.description || '',
+        status: key.status as APIKey['status'],
+        last_used: key.last_used || key.created_at,
+        requests_today: key.requests_today,
+        rate_limit: key.rate_limit,
+        created_at: key.created_at
+      })) || [];
+      
+      setApiKeys(mappedKeys);
+    } catch (error) {
+      console.error('Error fetching API keys:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحميل مفاتيح API",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUpdateKey = () => {
+  const handleAddKey = async () => {
+    try {
+      const { error } = await supabase
+        .from('api_keys')
+        .insert({
+          name: newKey.name,
+          key_value: newKey.key_value,
+          description: newKey.description,
+          status: 'active',
+          requests_today: 0,
+          rate_limit: 1000
+        });
+
+      if (error) throw error;
+
+      await fetchAPIKeys(); // Refresh the list
+      setShowAddDialog(false);
+      setNewKey({ name: '', key_value: '', description: '' });
+
+      toast({
+        title: "تم إضافة مفتاح API بنجاح",
+        description: `تم حفظ مفتاح ${newKey.name} بنجاح`,
+      });
+    } catch (error) {
+      console.error('Error adding API key:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في إضافة مفتاح API",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateKey = async () => {
     if (!editingKey) return;
 
-    setApiKeys(apiKeys.map(key => 
-      key.id === editingKey.id ? editingKey : key
-    ));
-    setEditingKey(null);
+    try {
+      const { error } = await supabase
+        .from('api_keys')
+        .update({
+          name: editingKey.name,
+          key_value: editingKey.key_value,
+          description: editingKey.description
+        })
+        .eq('id', editingKey.id);
 
-    toast({
-      title: "تم تحديث مفتاح API",
-      description: "تم حفظ التغييرات بنجاح",
-    });
+      if (error) throw error;
+
+      await fetchAPIKeys(); // Refresh the list
+      setEditingKey(null);
+
+      toast({
+        title: "تم تحديث مفتاح API",
+        description: "تم حفظ التغييرات بنجاح",
+      });
+    } catch (error) {
+      console.error('Error updating API key:', error);
+      toast({
+        title: "خطأ",
+        description: "فشل في تحديث مفتاح API",
+        variant: "destructive",
+      });
+    }
   };
 
   const testAPIConnection = async (keyId: string) => {
@@ -130,28 +160,62 @@ export const APIManagement = () => {
       description: `اختبار مفتاح ${key.name}`,
     });
 
-    // Simulate API test
-    setTimeout(() => {
+    try {
+      // Update the last_used timestamp and simulate test
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ last_used: new Date().toISOString() })
+        .eq('id', keyId);
+
+      if (error) throw error;
+
+      // Simulate API test result
       const isSuccess = Math.random() > 0.2; // 80% success rate
-      if (isSuccess) {
-        setApiKeys(keys => keys.map(k => 
-          k.id === keyId ? { ...k, status: 'active' } : k
-        ));
-        toast({
-          title: "نجح الاختبار",
-          description: "مفتاح API يعمل بشكل صحيح",
-        });
-      } else {
-        setApiKeys(keys => keys.map(k => 
-          k.id === keyId ? { ...k, status: 'error' } : k
-        ));
-        toast({
-          title: "فشل الاختبار",
-          description: "هناك مشكلة في مفتاح API",
-          variant: "destructive",
-        });
-      }
-    }, 2000);
+      const newStatus = isSuccess ? 'active' : 'error';
+
+      await supabase
+        .from('api_keys')
+        .update({ status: newStatus })
+        .eq('id', keyId);
+
+      await fetchAPIKeys(); // Refresh the list
+
+      toast({
+        title: isSuccess ? "نجح الاختبار" : "فشل الاختبار",
+        description: isSuccess ? "مفتاح API يعمل بشكل صحيح" : "هناك مشكلة في مفتاح API",
+        variant: isSuccess ? "default" : "destructive",
+      });
+    } catch (error) {
+      console.error('Error testing API:', error);
+      toast({
+        title: "خطأ في الاختبار",
+        description: "فشل في اختبار مفتاح API",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="h-6 bg-muted rounded w-1/4 animate-pulse"></div>
+          <div className="h-4 bg-muted rounded w-1/2 animate-pulse"></div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-32 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const maskKey = (key: string) => {
+    if (key.length <= 8) return key;
+    return key.substring(0, 4) + 'x'.repeat(key.length - 8) + key.substring(key.length - 4);
   };
 
   const getStatusBadge = (status: APIKey['status']) => {
@@ -165,11 +229,6 @@ export const APIManagement = () => {
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
-  };
-
-  const maskKey = (key: string) => {
-    if (key.length <= 8) return key;
-    return key.substring(0, 4) + 'x'.repeat(key.length - 8) + key.substring(key.length - 4);
   };
 
   return (
@@ -212,13 +271,13 @@ export const APIManagement = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="keyValue">قيمة المفتاح</Label>
-                    <Input
-                      id="keyValue"
-                      type="password"
-                      value={newKey.key}
-                      onChange={(e) => setNewKey(prev => ({ ...prev, key: e.target.value }))}
-                      placeholder="أدخل قيمة المفتاح"
-                    />
+                     <Input
+                       id="keyValue"
+                       type="password"
+                       value={newKey.key_value}
+                       onChange={(e) => setNewKey(prev => ({ ...prev, key_value: e.target.value }))}
+                       placeholder="أدخل قيمة المفتاح"
+                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="keyDescription">الوصف</Label>
@@ -264,9 +323,9 @@ export const APIManagement = () => {
                     <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <span className="text-sm text-muted-foreground">قيمة المفتاح:</span>
                       <div className="flex items-center space-x-2 space-x-reverse">
-                        <code className="text-xs bg-background px-2 py-1 rounded">
-                          {showKeyValue === apiKey.id ? apiKey.key : maskKey(apiKey.key)}
-                        </code>
+                         <code className="text-xs bg-background px-2 py-1 rounded">
+                           {showKeyValue === apiKey.id ? apiKey.key_value : maskKey(apiKey.key_value)}
+                         </code>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -353,12 +412,12 @@ export const APIManagement = () => {
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="editKeyValue">قيمة المفتاح</Label>
-                              <Input
-                                id="editKeyValue"
-                                type="password"
-                                value={editingKey.key}
-                                onChange={(e) => setEditingKey(prev => prev ? { ...prev, key: e.target.value } : null)}
-                              />
+                               <Input
+                                 id="editKeyValue"
+                                 type="password"
+                                 value={editingKey.key_value}
+                                 onChange={(e) => setEditingKey(prev => prev ? { ...prev, key_value: e.target.value } : null)}
+                               />
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="editKeyDescription">الوصف</Label>
