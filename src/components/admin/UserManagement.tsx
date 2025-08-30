@@ -62,12 +62,21 @@ export const UserManagement = () => {
 
   const fetchUsers = async () => {
     try {
+      console.log('Fetching users from database...');
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Users fetch result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Successfully fetched users:', data);
       setUsers(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -187,130 +196,146 @@ export const UserManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2 space-x-reverse">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {user.full_name || 'غير محدد'}
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Users className="h-4 w-4 text-primary" />
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {user.phone || 'لا يوجد رقم'}
+                          <div>
+                            <div className="font-medium">
+                              {user.full_name || 'غير محدد'}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {user.phone || 'لا يوجد رقم'}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {user.username || 'غير محدد'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-1 space-x-reverse text-sm text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>
-                          {new Date(user.created_at).toLocaleDateString('ar-SA')}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className="bg-green-500/10 text-green-500">
-                        <Activity className="h-3 w-3 mr-1" />
-                        نشط
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2 space-x-reverse">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleViewUser(user)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              عرض
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>تفاصيل المستخدم</DialogTitle>
-                              <DialogDescription>
-                                معلومات شاملة عن المستخدم وأنشطته
-                              </DialogDescription>
-                            </DialogHeader>
-                            {selectedUser && (
-                              <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm">المعلومات الشخصية</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-muted-foreground">الاسم:</span>
-                                        <span className="text-sm">{selectedUser.full_name || 'غير محدد'}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-muted-foreground">اسم المستخدم:</span>
-                                        <span className="text-sm">{selectedUser.username || 'غير محدد'}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-sm text-muted-foreground">الهاتف:</span>
-                                        <span className="text-sm">{selectedUser.phone || 'غير محدد'}</span>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {user.username || 'غير محدد'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1 space-x-reverse text-sm text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          <span>
+                            {new Date(user.created_at).toLocaleDateString('ar-SA')}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-green-500/10 text-green-500">
+                          <Activity className="h-3 w-3 mr-1" />
+                          نشط
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewUser(user)}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                عرض
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>تفاصيل المستخدم</DialogTitle>
+                                <DialogDescription>
+                                  معلومات شاملة عن المستخدم وأنشطته
+                                </DialogDescription>
+                              </DialogHeader>
+                              {selectedUser && (
+                                <div className="space-y-6">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <Card>
+                                      <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm">المعلومات الشخصية</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">الاسم:</span>
+                                          <span className="text-sm">{selectedUser.full_name || 'غير محدد'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">اسم المستخدم:</span>
+                                          <span className="text-sm">{selectedUser.username || 'غير محدد'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-sm text-muted-foreground">الهاتف:</span>
+                                          <span className="text-sm">{selectedUser.phone || 'غير محدد'}</span>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                    
+                                    <Card>
+                                      <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm">الإحصائيات</CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-2">
+                                        {userStats ? (
+                                          <>
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-muted-foreground">المعاملات:</span>
+                                              <span className="text-sm">{userStats.totalTransactions}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-muted-foreground">قيمة المحفظة:</span>
+                                              <span className="text-sm">{userStats.portfolioValue.toLocaleString()} ر.س</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                              <span className="text-sm text-muted-foreground">قوائم المراقبة:</span>
+                                              <span className="text-sm">{userStats.watchlistCount}</span>
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="text-sm text-muted-foreground">جارٍ التحميل...</div>
+                                        )}
+                                      </CardContent>
+                                    </Card>
+                                  </div>
                                   
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm">الإحصائيات</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                      {userStats ? (
-                                        <>
-                                          <div className="flex justify-between">
-                                            <span className="text-sm text-muted-foreground">المعاملات:</span>
-                                            <span className="text-sm">{userStats.totalTransactions}</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-sm text-muted-foreground">قيمة المحفظة:</span>
-                                            <span className="text-sm">{userStats.portfolioValue.toLocaleString()} ر.س</span>
-                                          </div>
-                                          <div className="flex justify-between">
-                                            <span className="text-sm text-muted-foreground">قوائم المراقبة:</span>
-                                            <span className="text-sm">{userStats.watchlistCount}</span>
-                                          </div>
-                                        </>
-                                      ) : (
-                                        <div className="text-sm text-muted-foreground">جارٍ التحميل...</div>
-                                      )}
-                                    </CardContent>
-                                  </Card>
+                                  {selectedUser.bio && (
+                                    <Card>
+                                      <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm">النبذة التعريفية</CardTitle>
+                                      </CardHeader>
+                                      <CardContent>
+                                        <p className="text-sm">{selectedUser.bio}</p>
+                                      </CardContent>
+                                    </Card>
+                                  )}
                                 </div>
-                                
-                                {selectedUser.bio && (
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-sm">النبذة التعريفية</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <p className="text-sm">{selectedUser.bio}</p>
-                                    </CardContent>
-                                  </Card>
-                                )}
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-8">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Users className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-muted-foreground">
+                          {searchTerm ? 'لا توجد نتائج للبحث' : 'لا يوجد مستخدمين مسجلين حتى الآن'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          إجمالي المستخدمين في النظام: {users.length}
+                        </p>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </div>
