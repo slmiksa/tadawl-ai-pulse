@@ -67,12 +67,24 @@ export const AdminManagement = () => {
 
   const fetchAdmins = async () => {
     try {
+      console.log('Fetching admins from database...');
+      
       const { data, error } = await supabase
         .from('admins')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      console.log('Admins fetch result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({
+          title: "خطأ في قاعدة البيانات",
+          description: `${error.message || 'خطأ غير معروف'}`,
+          variant: "destructive",
+        });
+        return;
+      }
       
       const mappedAdmins: Admin[] = data?.map(admin => ({
         id: admin.id,
@@ -85,12 +97,13 @@ export const AdminManagement = () => {
         status: admin.status as Admin['status']
       })) || [];
       
+      console.log('Successfully fetched admins:', mappedAdmins);
       setAdmins(mappedAdmins);
     } catch (error) {
       console.error('Error fetching admins:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل بيانات المشرفين",
+        description: "فشل في تحميل بيانات المشرفين - تحقق من اتصال الإنترنت",
         variant: "destructive",
       });
     } finally {

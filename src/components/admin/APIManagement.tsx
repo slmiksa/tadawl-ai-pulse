@@ -56,10 +56,24 @@ export const APIManagement = () => {
 
   const fetchAPIKeys = async () => {
     try {
+      console.log('Fetching API keys from database...');
+      
       const { data, error } = await supabase
         .from('api_keys')
         .select('*')
         .order('created_at', { ascending: false });
+
+      console.log('API keys fetch result:', { data, error });
+
+      if (error) {
+        console.error('Supabase error:', error);
+        toast({
+          title: "خطأ في قاعدة البيانات",
+          description: `${error.message || 'خطأ غير معروف'}`,
+          variant: "destructive",
+        });
+        return;
+      }
 
       const mappedKeys: APIKey[] = data?.map(key => ({
         id: key.id,
@@ -73,12 +87,13 @@ export const APIManagement = () => {
         created_at: key.created_at
       })) || [];
       
+      console.log('Successfully fetched API keys:', mappedKeys);
       setApiKeys(mappedKeys);
     } catch (error) {
       console.error('Error fetching API keys:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل مفاتيح API",
+        description: "فشل في تحميل مفاتيح API - تحقق من اتصال الإنترنت",
         variant: "destructive",
       });
     } finally {

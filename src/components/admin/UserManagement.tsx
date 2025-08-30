@@ -73,16 +73,27 @@ export const UserManagement = () => {
 
       if (error) {
         console.error('Supabase error:', error);
-        throw error;
+        // Try to provide more specific error information
+        toast({
+          title: "خطأ في قاعدة البيانات",
+          description: `${error.message || 'خطأ غير معروف'}`,
+          variant: "destructive",
+        });
+        return;
       }
       
       console.log('Successfully fetched users:', data);
       setUsers(data || []);
+      
+      // Show success message if users found
+      if (data && data.length > 0) {
+        console.log(`Found ${data.length} users`);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
         title: "خطأ",
-        description: "فشل في تحميل بيانات المستخدمين",
+        description: "فشل في تحميل بيانات المستخدمين - تحقق من اتصال الإنترنت",
         variant: "destructive",
       });
     } finally {
