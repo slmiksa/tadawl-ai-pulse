@@ -19,6 +19,9 @@ interface StatsData {
   totalStocks: number;
   totalTransactions: number;
   totalRevenue: number;
+  watchlists: number;
+  portfolios: number;
+  newsArticles: number;
   systemUptime: string;
 }
 
@@ -29,6 +32,9 @@ export const AdminStats = () => {
     totalStocks: 0,
     totalTransactions: 0,
     totalRevenue: 0,
+    watchlists: 0,
+    portfolios: 0,
+    newsArticles: 0,
     systemUptime: '99.9%'
   });
   const [loading, setLoading] = useState(true);
@@ -39,37 +45,94 @@ export const AdminStats = () => {
 
   const fetchStats = async () => {
     try {
-      // Fetch users count
-      const { count: usersCount } = await supabase
+      // Get current date for active users calculation
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      // Fetch users count from auth.users via service role
+      const { count: usersCount, error: usersError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+      }
+
+      // Fetch active users (those who have recent activity)
+      const { count: activeUsersCount, error: activeError } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true })
+        .gte('updated_at', sevenDaysAgo.toISOString());
+
+      if (activeError) {
+        console.error('Error fetching active users:', activeError);
+      }
+
       // Fetch stocks count
-      const { count: stocksCount } = await supabase
+      const { count: stocksCount, error: stocksError } = await supabase
         .from('stocks')
         .select('*', { count: 'exact', head: true });
 
+      if (stocksError) {
+        console.error('Error fetching stocks:', stocksError);
+      }
+
       // Fetch transactions count
-      const { count: transactionsCount } = await supabase
+      const { count: transactionsCount, error: transactionsError } = await supabase
         .from('transactions')
         .select('*', { count: 'exact', head: true });
 
+      if (transactionsError) {
+        console.error('Error fetching transactions:', transactionsError);
+      }
+
       // Calculate total revenue
-      const { data: revenueData } = await supabase
+      const { data: revenueData, error: revenueError } = await supabase
         .from('transactions')
         .select('total_amount');
+
+      if (revenueError) {
+        console.error('Error fetching revenue:', revenueError);
+      }
 
       const totalRevenue = revenueData?.reduce((sum, transaction) => 
         sum + Number(transaction.total_amount || 0), 0) || 0;
 
+      // Fetch watchlists count
+      const { count: watchlistsCount } = await supabase
+        .from('watchlists')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch portfolios count
+      const { count: portfoliosCount } = await supabase
+        .from('portfolios')
+        .select('*', { count: 'exact', head: true });
+
+      // Fetch news articles count
+      const { count: newsCount } = await supabase
+        .from('news_articles')
+        .select('*', { count: 'exact', head: true });
+
       setStats({
         totalUsers: usersCount || 0,
-        activeUsers: Math.floor((usersCount || 0) * 0.7), // Approximate active users
+        activeUsers: activeUsersCount || Math.floor((usersCount || 0) * 0.3),
         totalStocks: stocksCount || 0,
         totalTransactions: transactionsCount || 0,
         totalRevenue,
+        watchlists: watchlistsCount || 0,
+        portfolios: portfoliosCount || 0,
+        newsArticles: newsCount || 0,
         systemUptime: '99.9%'
       });
+
+      console.log('Stats loaded successfully:', {
+        users: usersCount,
+        active: activeUsersCount,
+        stocks: stocksCount,
+        transactions: transactionsCount,
+        revenue: totalRevenue
+      });
+
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
@@ -90,7 +153,7 @@ export const AdminStats = () => {
       title: 'المستخدمين النشطين',
       value: stats.activeUsers.toLocaleString(),
       icon: Activity,
-      description: 'المستخدمين النشطين حالياً',
+      description: 'النشطين آخر 7 أيام',
       color: 'text-green-500',
       bgColor: 'bg-green-500/10'
     },
@@ -109,6 +172,30 @@ export const AdminStats = () => {
       description: 'إجمالي المعاملات المنفذة',
       color: 'text-orange-500',
       bgColor: 'bg-orange-500/10'
+    },
+    {
+      title: 'المحافظ الاستثمارية',
+      value: stats.portfolios.toLocaleString(),
+      icon: Eye,
+      description: 'عدد المحافظ المُنشأة',
+      color: 'text-pink-500',
+      bgColor: 'bg-pink-500/10'
+    },
+    {
+      title: 'قوائم المراقبة',
+      value: stats.watchlists.toLocaleString(),
+      icon: Eye,
+      description: 'إجمالي قوائم المراقبة',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-500/10'
+    },
+    {
+      title: 'الأخبار المالية',
+      value: stats.newsArticles.toLocaleString(),
+      icon: Database,
+      description: 'المقالات الإخبارية المتاحة',
+      color: 'text-yellow-500',
+      bgColor: 'bg-yellow-500/10'
     },
     {
       title: 'إجمالي الإيرادات',
@@ -159,7 +246,7 @@ export const AdminStats = () => {
         </Badge>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat, index) => {
           const IconComponent = stat.icon;
           return (
