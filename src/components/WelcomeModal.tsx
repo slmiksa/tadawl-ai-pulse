@@ -20,9 +20,9 @@ const WelcomeModal = ({
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">
-                  مرحباً بك في TadawlAI
-                </DialogTitle>
-                <p className="text-purple-300">منصة التداول الذكي</p>
+              </DialogTitle>
+                <p className="text-purple-300">
+              </p>
               </div>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-400 hover:text-white">
