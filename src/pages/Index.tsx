@@ -93,7 +93,9 @@ const Index = () => {
   const renderContent = () => {
     // Allow access to subscriptions page even without subscription
     if (activeTab === 'subscriptions') {
-      return <Subscriptions />;
+      // Navigate to packages page instead of showing component
+      navigate('/packages');
+      return null;
     }
 
     // For other tabs, check subscription status
@@ -134,6 +136,10 @@ const Index = () => {
         return <Notifications />;
       case 'profile':
         return <Profile />;
+      case 'subscriptions':
+        // Navigate to packages page instead of showing subscriptions component
+        navigate('/packages');
+        return null;
       default:
         return <Dashboard selectedStock={selectedStock} onClearSelection={() => setSelectedStock(null)} />;
     }

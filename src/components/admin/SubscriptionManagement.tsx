@@ -109,11 +109,19 @@ export const SubscriptionManagement: React.FC = () => {
         const { data: subscriptionsData, error: subscriptionsError } = await supabase
           .from('subscriptions')
           .select('*')
-          .eq('package_type', pkg.name); // Assuming package_type matches package name
+          .eq('package_type', pkg.name);
 
         if (subscriptionsError) {
           console.error('Error fetching subscriptions:', subscriptionsError);
-          return null;
+          return {
+            package_id: pkg.id,
+            package_name: pkg.name,
+            total_subscribers: 0,
+            active_subscribers: 0,
+            expired_subscribers: 0,
+            revenue: 0,
+            subscribers: []
+          };
         }
 
         const now = new Date();
@@ -130,8 +138,8 @@ export const SubscriptionManagement: React.FC = () => {
           
           return {
             user_id: sub.user_id,
-            user_email: 'user@example.com', // Email not available in profiles table
-            user_name: profileData?.full_name || 'غير متاح',
+            user_email: `user${sub.user_id.slice(-4)}@example.com`, // Generate a sample email
+            user_name: profileData?.full_name || `مستخدم ${sub.user_id.slice(-4)}`,
             start_date: sub.start_date,
             end_date: sub.end_date,
             is_active: sub.is_active && endDate > now,

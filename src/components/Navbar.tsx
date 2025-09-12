@@ -81,6 +81,10 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
   const handleTabChange = (tab: string) => {
+    if (tab === 'subscriptions') {
+      navigate('/packages');
+      return;
+    }
     onTabChange(tab);
     setIsMobileMenuOpen(false);
   };
