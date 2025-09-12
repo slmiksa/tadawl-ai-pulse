@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Lock, Mail, Eye, EyeOff, TrendingUp, ArrowRight, Check } from 'lucide-react';
+import { User, Lock, Mail, Eye, EyeOff, TrendingUp, ArrowRight, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,12 +17,6 @@ const Auth = () => {
   } = useToast();
   const location = useLocation();
   const [showLogoutMessage, setShowLogoutMessage] = useState<boolean>(Boolean((location.state as any)?.showLogoutMessage));
-  useEffect(() => {
-    if (showLogoutMessage) {
-      const timer = setTimeout(() => setShowLogoutMessage(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [showLogoutMessage]);
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
@@ -199,8 +193,20 @@ const Auth = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="absolute inset-0 bg-black/50" />
             <div className="relative z-10 bg-gray-900/95 border border-gray-700 rounded-2xl shadow-xl p-6 w-[90%] max-w-md text-center animate-in fade-in zoom-in-95">
-              <h4 className="text-xl font-bold text-white">لا تغيب عنا كثير</h4>
-              <p className="text-gray-300 mt-2">ننتظر عودتك بفارغ الصبر 💜</p>
+              <button
+                onClick={() => setShowLogoutMessage(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h4 className="text-xl font-bold text-white mb-2">لا تغيب عنا كثير</h4>
+              <p className="text-gray-300 mb-4">ننتظر عودتك بفارغ الصبر 💜</p>
+              <button
+                onClick={() => setShowLogoutMessage(false)}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                إغلاق
+              </button>
             </div>
           </div>
         )}
