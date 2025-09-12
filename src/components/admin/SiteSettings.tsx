@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,11 @@ import {
   Shield,
   Database,
   Palette,
-  Bell
+  Bell,
+  Loader2
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SiteConfig {
   siteName: string;
@@ -82,36 +84,185 @@ const defaultConfig: SiteConfig = {
 };
 
 export const SiteSettings = () => {
-  const [config, setConfig] = useState<SiteConfig>(defaultConfig);
-  const [loading, setSaveLoading] = useState(false);
+  const [config, setConfig] = useState<SiteConfig | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
 
-  const handleSave = async () => {
-    setSaveLoading(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast({
-      title: "تم حفظ الإعدادات بنجاح",
-      description: "تم تطبيق جميع التغييرات على النظام",
-    });
-    
-    setSaveLoading(false);
+  // Load site settings from database
+  const loadSettings = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.rpc('get_site_settings');
+      
+      if (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: "خطأ في تحميل الإعدادات",
+          description: "حدث خطأ أثناء تحميل إعدادات الموقع",
+          variant: "destructive"
+        });
+        // Fallback to default config
+        setConfig(defaultConfig);
+        return;
+      }
+
+      // Transform database structure to component structure
+      const dbData = data as any; // Type assertion for complex JSON structure
+      const transformedConfig: SiteConfig = {
+        siteName: dbData?.general?.siteName || defaultConfig.siteName,
+        siteDescription: dbData?.general?.siteDescription || defaultConfig.siteDescription,
+        contactEmail: dbData?.general?.contactEmail || defaultConfig.contactEmail,
+        supportEmail: dbData?.general?.supportEmail || defaultConfig.supportEmail,
+        maintenanceMode: dbData?.security?.maintenanceMode || defaultConfig.maintenanceMode,
+        registrationEnabled: dbData?.security?.registrationEnabled || defaultConfig.registrationEnabled,
+        emailVerificationRequired: dbData?.security?.emailVerificationRequired || defaultConfig.emailVerificationRequired,
+        twoFactorEnabled: dbData?.security?.twoFactorEnabled || defaultConfig.twoFactorEnabled,
+        maxUsersPerDay: dbData?.security?.maxUsersPerDay || defaultConfig.maxUsersPerDay,
+        sessionTimeout: dbData?.security?.sessionTimeout || defaultConfig.sessionTimeout,
+        primaryColor: dbData?.appearance?.primaryColor || defaultConfig.primaryColor,
+        secondaryColor: dbData?.appearance?.secondaryColor || defaultConfig.secondaryColor,
+        logoUrl: dbData?.appearance?.logoUrl || defaultConfig.logoUrl,
+        faviconUrl: dbData?.appearance?.faviconUrl || defaultConfig.faviconUrl,
+        socialMediaLinks: {
+          twitter: dbData?.social_media?.twitter || defaultConfig.socialMediaLinks.twitter,
+          linkedin: dbData?.social_media?.linkedin || defaultConfig.socialMediaLinks.linkedin,
+          facebook: dbData?.social_media?.facebook || defaultConfig.socialMediaLinks.facebook
+        },
+        seoSettings: {
+          metaTitle: dbData?.seo?.metaTitle || defaultConfig.seoSettings.metaTitle,
+          metaDescription: dbData?.seo?.metaDescription || defaultConfig.seoSettings.metaDescription,
+          keywords: dbData?.seo?.keywords || defaultConfig.seoSettings.keywords
+        },
+        notificationSettings: {
+          emailNotifications: dbData?.notifications?.emailNotifications || defaultConfig.notificationSettings.emailNotifications,
+          pushNotifications: dbData?.notifications?.pushNotifications || defaultConfig.notificationSettings.pushNotifications,
+          smsNotifications: dbData?.notifications?.smsNotifications || defaultConfig.notificationSettings.smsNotifications
+        }
+      };
+
+      setConfig(transformedConfig);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast({
+        title: "خطأ في تحميل الإعدادات",
+        description: "حدث خطأ أثناء تحميل إعدادات الموقع",
+        variant: "destructive"
+      });
+      setConfig(defaultConfig);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // Save settings to database
+  const handleSave = async () => {
+    if (!config) return;
+    
+    setSaveLoading(true);
+    
+    try {
+      // Transform component structure to database structure
+      const settingsData = {
+        general: {
+          siteName: config.siteName,
+          siteDescription: config.siteDescription,
+          contactEmail: config.contactEmail,
+          supportEmail: config.supportEmail
+        },
+        security: {
+          maintenanceMode: config.maintenanceMode,
+          registrationEnabled: config.registrationEnabled,
+          emailVerificationRequired: config.emailVerificationRequired,
+          twoFactorEnabled: config.twoFactorEnabled,
+          maxUsersPerDay: config.maxUsersPerDay,
+          sessionTimeout: config.sessionTimeout
+        },
+        appearance: {
+          primaryColor: config.primaryColor,
+          secondaryColor: config.secondaryColor,
+          logoUrl: config.logoUrl,
+          faviconUrl: config.faviconUrl
+        },
+        social_media: {
+          twitter: config.socialMediaLinks.twitter,
+          linkedin: config.socialMediaLinks.linkedin,
+          facebook: config.socialMediaLinks.facebook
+        },
+        seo: {
+          metaTitle: config.seoSettings.metaTitle,
+          metaDescription: config.seoSettings.metaDescription,
+          keywords: config.seoSettings.keywords
+        },
+        notifications: {
+          emailNotifications: config.notificationSettings.emailNotifications,
+          pushNotifications: config.notificationSettings.pushNotifications,
+          smsNotifications: config.notificationSettings.smsNotifications
+        }
+      };
+
+      const { error } = await supabase.rpc('update_site_settings', {
+        settings_data: settingsData
+      });
+
+      if (error) {
+        console.error('Error saving settings:', error);
+        toast({
+          title: "خطأ في حفظ الإعدادات",
+          description: "حدث خطأ أثناء حفظ إعدادات الموقع",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "تم حفظ الإعدادات بنجاح",
+        description: "تم تطبيق جميع التغييرات على النظام",
+      });
+      
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        title: "خطأ في حفظ الإعدادات",
+        description: "حدث خطأ أثناء حفظ إعدادات الموقع",
+        variant: "destructive"
+      });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Load settings on component mount
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
   const updateConfig = (key: keyof SiteConfig, value: any) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    if (!config) return;
+    setConfig(prev => prev ? { ...prev, [key]: value } : null);
   };
 
   const updateNestedConfig = (parent: keyof SiteConfig, key: string, value: any) => {
-    setConfig(prev => ({
+    if (!config) return;
+    setConfig(prev => prev ? ({
       ...prev,
       [parent]: {
         ...(prev[parent] as any),
         [key]: value
       }
-    }));
+    }) : null);
   };
+
+  // Show loading state
+  if (loading || !config) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">جارٍ تحميل إعدادات الموقع...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -122,12 +273,12 @@ export const SiteSettings = () => {
         </div>
         <Button 
           onClick={handleSave} 
-          disabled={loading}
+          disabled={saveLoading}
           className="gradient-bg"
         >
-          {loading ? (
+          {saveLoading ? (
             <div className="flex items-center">
-              <div className="spinner w-4 h-4 mr-2"></div>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               جارٍ الحفظ...
             </div>
           ) : (
