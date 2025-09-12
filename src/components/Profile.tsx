@@ -4,6 +4,7 @@ import { User, Settings, LogOut, Edit, Save, Mail, Phone, Calendar, Shield } fro
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from '@/hooks/use-toast';
 
 const Profile: React.FC = () => {
   const navigate = useNavigate();
@@ -128,7 +129,18 @@ const Profile: React.FC = () => {
         console.error('Logout error:', error);
         return;
       }
-      navigate('/auth');
+      
+      // Show farewell message
+      toast({
+        title: "لا تغيب عنا كثير",
+        description: "ننتظر عودتك بفارغ الصبر 💜",
+        duration: 3000,
+      });
+      
+      // Navigate to auth page after a short delay
+      setTimeout(() => {
+        navigate('/auth');
+      }, 1000);
     } catch (error) {
       console.error('Unexpected logout error:', error);
     }
