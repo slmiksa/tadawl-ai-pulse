@@ -51,7 +51,7 @@ const Index = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
-        navigate('/auth');
+        navigate('/auth', { state: { showLogoutMessage: true } });
       } else if (session) {
         setUser(session.user);
         

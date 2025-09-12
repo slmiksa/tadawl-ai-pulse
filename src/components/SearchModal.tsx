@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, TrendingUp } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStocksList } from '@/hooks/useStocksList';
@@ -12,13 +12,23 @@ interface SearchModalProps {
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSelectStock }) => {
   const { t, isRTL } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredStocks, setFilteredStocks] = useState<any[]>([]);
+  
   const searchInputRef = useRef<HTMLInputElement>(null);
   
   const { stocks: usStocks } = useStocksList('us');
   const { stocks: saudiStocks } = useStocksList('saudi');
   
-  const allStocks = [...usStocks, ...saudiStocks];
+  const allStocks = useMemo(() => [...usStocks, ...saudiStocks], [usStocks, saudiStocks]);
+  
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) return [] as any[];
+    return allStocks
+      .filter((stock) =>
+        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        stock.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .slice(0, 10);
+  }, [searchQuery, allStocks]);
 
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
@@ -26,17 +36,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose, onSelectStoc
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = allStocks.filter(stock => 
-        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 10); // Limit to 10 results
-      setFilteredStocks(filtered);
-    } else {
-      setFilteredStocks([]);
-    }
-  }, [searchQuery, allStocks]);
 
   const handleStockClick = (stock: any) => {
     if (onSelectStock) {
