@@ -16,7 +16,8 @@ import {
   UserPlus,
   Eye,
   TrendingUp,
-  Crown
+  Crown,
+  BookOpen
 } from 'lucide-react';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -57,6 +58,15 @@ const AdminDashboard = () => {
               </div>
             </div>
             <div className="flex items-center space-x-2 space-x-reverse">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/tadawladmin/documentation')}
+                className="flex items-center"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                دليل الاستخدام
+              </Button>
               <Badge variant="secondary" className="bg-green-500/10 text-green-500">
                 <Activity className="h-3 w-3 mr-1" />
                 متصل

@@ -8,6 +8,7 @@ import Auth from '../pages/Auth';
 import SubscriptionPackages from '../pages/SubscriptionPackages';
 import AdminLogin from '../pages/AdminLogin';
 import AdminDashboard from '../pages/AdminDashboard';
+import DocumentationPage from '../pages/DocumentationPage';
 import NotFound from '../pages/NotFound';
 
 export const SiteWrapper = () => {
@@ -88,13 +89,14 @@ export const SiteWrapper = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/auth" element={<Auth />} />
-      <Route path="/packages" element={<SubscriptionPackages />} />
-      <Route path="/tadawladmin" element={<AdminLogin />} />
-      <Route path="/tadawladmin/dashboard" element={<AdminDashboard />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/packages" element={<SubscriptionPackages />} />
+          <Route path="/tadawladmin" element={<AdminLogin />} />
+          <Route path="/tadawladmin/dashboard" element={<AdminDashboard />} />
+          <Route path="/tadawladmin/documentation" element={<DocumentationPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
   );
 };
