@@ -89,16 +89,12 @@ const Auth = () => {
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
           <div className="text-center space-y-4">
-            <div className="w-32 h-32 mx-auto rounded-2xl flex items-center justify-center bg-white shadow-lg p-4">
+            <div className="mx-auto">
               <img 
-                src="/lovable-uploads/150d7d27-c70e-4f8f-a884-200cebdc302a.png" 
-                alt="TadawlAI Logo" 
-                className="w-full h-full object-contain"
+                src="/lovable-uploads/af033e54-dae7-4d34-bc79-3fc50cc1ade6.png" 
+                alt="TadawlAI Complete Logo" 
+                className="w-48 h-auto object-contain mx-auto"
               />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">TadawlAI</h1>
-              <p className="text-xl text-gray-300">منصة التداول الذكي</p>
             </div>
           </div>
 
