@@ -91,10 +91,13 @@ const Auth = () => {
           <div className="text-center space-y-4">
             <div className="mx-auto">
               <img 
-                src="/lovable-uploads/af033e54-dae7-4d34-bc79-3fc50cc1ade6.png" 
-                alt="TadawlAI Complete Logo" 
+                src="/lovable-uploads/34457f90-e80f-42af-97f8-534889c570a9.png" 
+                alt="TadawlAI Logo" 
                 className="w-48 h-auto object-contain mx-auto"
               />
+            </div>
+            <div>
+              <p className="text-xl text-gray-300">منصة التداول الذكي</p>
             </div>
           </div>
 
