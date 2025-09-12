@@ -46,7 +46,7 @@ const Auth = () => {
           title: "تم تسجيل الدخول بنجاح",
           description: "مرحباً بك في منصة TadawlAI Trading"
         });
-        
+
         // Mark that user should see welcome modal
         localStorage.setItem('showWelcomeModal', 'true');
         navigate('/');
@@ -88,15 +88,12 @@ const Auth = () => {
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
-          <div className="text-center space-y-4">
-            <div className="mx-auto p-6 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl hover-scale">
-              <img 
-                src="/lovable-uploads/79808dce-ae1d-45f9-9272-ae49771610e2.png" 
-                alt="TadawlAI Logo" 
-                className="w-48 h-auto object-contain mx-auto animate-fade-in"
-              />
+          <div className="flex items-center space-x-4">
+            <div className="w-20 h-20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/20 bg-[#c6bccc]/20">
+              <img src="/lovable-uploads/667fec9c-4dd6-4111-9d9c-9041262a3376.png" alt="TadawlAI Logo" className="w-16 h-16 object-contain" />
             </div>
             <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">   TadawlAI  </h1>
               <p className="text-xl text-gray-300">منصة التداول الذكي</p>
             </div>
           </div>
