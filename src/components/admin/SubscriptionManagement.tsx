@@ -19,7 +19,11 @@ import {
   Calendar,
   Check,
   Eye,
-  EyeOff
+  EyeOff,
+  Users,
+  Clock,
+  BarChart3,
+  TrendingUp
 } from 'lucide-react';
 
 interface Package {
@@ -37,15 +41,36 @@ interface Package {
   display_order: number;
 }
 
-export const PackageManagement: React.FC = () => {
+interface SubscriptionStats {
+  package_id: string;
+  package_name: string;
+  total_subscribers: number;
+  active_subscribers: number;
+  expired_subscribers: number;
+  revenue: number;
+  subscribers: Array<{
+    user_id: string;
+    user_email: string;
+    user_name: string;
+    start_date: string;
+    end_date: string;
+    is_active: boolean;
+    days_remaining: number;
+  }>;
+}
+
+export const SubscriptionManagement: React.FC = () => {
   const { toast } = useToast();
   
   const [packages, setPackages] = useState<Package[]>([]);
+  const [subscriptionStats, setSubscriptionStats] = useState<SubscriptionStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [editPackage, setEditPackage] = useState<Package | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newFeature, setNewFeature] = useState('');
   const [newFeatureEn, setNewFeatureEn] = useState('');
+  const [activeView, setActiveView] = useState<'stats' | 'packages'>('stats');
 
   const emptyPackage: Package = {
     id: '',
@@ -64,7 +89,84 @@ export const PackageManagement: React.FC = () => {
 
   useEffect(() => {
     fetchPackages();
+    fetchSubscriptionStats();
   }, []);
+
+  const fetchSubscriptionStats = async () => {
+    try {
+      setStatsLoading(true);
+      
+      // Get all packages first
+      const { data: packagesData, error: packagesError } = await supabase
+        .from('packages')
+        .select('*')
+        .order('display_order');
+
+      if (packagesError) throw packagesError;
+
+      const statsPromises = (packagesData || []).map(async (pkg) => {
+        // Get subscriptions for this package type
+        const { data: subscriptionsData, error: subscriptionsError } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('package_type', pkg.name); // Assuming package_type matches package name
+
+        if (subscriptionsError) {
+          console.error('Error fetching subscriptions:', subscriptionsError);
+          return null;
+        }
+
+        const now = new Date();
+        const subscribersPromises = (subscriptionsData || []).map(async (sub) => {
+          // Get user profile data separately
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', sub.user_id)
+            .maybeSingle();
+
+          const endDate = new Date(sub.end_date);
+          const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+          
+          return {
+            user_id: sub.user_id,
+            user_email: 'user@example.com', // Email not available in profiles table
+            user_name: profileData?.full_name || 'غير متاح',
+            start_date: sub.start_date,
+            end_date: sub.end_date,
+            is_active: sub.is_active && endDate > now,
+            days_remaining: daysRemaining
+          };
+        });
+
+        const subscribers = await Promise.all(subscribersPromises);
+        const activeSubscribers = subscribers.filter(s => s.is_active).length;
+        const expiredSubscribers = subscribers.filter(s => !s.is_active).length;
+
+        return {
+          package_id: pkg.id,
+          package_name: pkg.name,
+          total_subscribers: subscribers.length,
+          active_subscribers: activeSubscribers,
+          expired_subscribers: expiredSubscribers,
+          revenue: activeSubscribers * pkg.price,
+          subscribers
+        };
+      });
+
+      const stats = await Promise.all(statsPromises);
+      setSubscriptionStats(stats.filter(Boolean) as SubscriptionStats[]);
+    } catch (error) {
+      console.error('Error fetching subscription stats:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تحميل إحصائيات الاشتراكات",
+        variant: "destructive"
+      });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const fetchPackages = async () => {
     try {
@@ -136,6 +238,7 @@ export const PackageManagement: React.FC = () => {
       setEditPackage(null);
       setIsAddingNew(false);
       fetchPackages();
+      fetchSubscriptionStats(); // Refresh stats after package changes
     } catch (error) {
       console.error('Error saving package:', error);
       toast({
@@ -163,6 +266,7 @@ export const PackageManagement: React.FC = () => {
       });
       
       fetchPackages();
+      fetchSubscriptionStats(); // Refresh stats after deletion
     } catch (error) {
       console.error('Error deleting package:', error);
       toast({
@@ -188,6 +292,7 @@ export const PackageManagement: React.FC = () => {
       });
       
       fetchPackages();
+      fetchSubscriptionStats(); // Refresh stats after status change
     } catch (error) {
       console.error('Error toggling package status:', error);
       toast({
@@ -229,7 +334,7 @@ export const PackageManagement: React.FC = () => {
     setEditPackage(updatedPackage);
   };
 
-  if (loading) {
+  if (loading || statsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -237,100 +342,268 @@ export const PackageManagement: React.FC = () => {
     );
   }
 
+  const totalRevenue = subscriptionStats.reduce((sum, stat) => sum + stat.revenue, 0);
+  const totalActiveSubscribers = subscriptionStats.reduce((sum, stat) => sum + stat.active_subscribers, 0);
+  const totalSubscribers = subscriptionStats.reduce((sum, stat) => sum + stat.total_subscribers, 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold gradient-text">إدارة الباقات</h2>
-          <p className="text-muted-foreground">إدارة باقات الاشتراك والأسعار</p>
+          <h2 className="text-2xl font-bold gradient-text">إدارة الاشتراكات</h2>
+          <p className="text-muted-foreground">إحصائيات شاملة وإدارة باقات الاشتراك</p>
         </div>
-        <Button
-          onClick={() => {
-            setEditPackage(emptyPackage);
-            setIsAddingNew(true);
-          }}
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          إضافة باقة جديدة
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={activeView === 'stats' ? 'default' : 'outline'}
+            onClick={() => setActiveView('stats')}
+            className="gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            الإحصائيات
+          </Button>
+          <Button
+            variant={activeView === 'packages' ? 'default' : 'outline'}
+            onClick={() => setActiveView('packages')}
+            className="gap-2"
+          >
+            <Crown className="h-4 w-4" />
+            إدارة الباقات
+          </Button>
+        </div>
       </div>
 
-      {/* Packages Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {packages.map((pkg) => (
-          <Card key={pkg.id} className={`relative ${pkg.is_popular ? 'border-yellow-500' : ''}`}>
-            {pkg.is_popular && (
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <Badge className="bg-yellow-500 text-black gap-1">
-                  <Star className="h-3 w-3 fill-current" />
-                  الأكثر شعبية
-                </Badge>
-              </div>
-            )}
-
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-xl">{pkg.name}</CardTitle>
+      {activeView === 'stats' ? (
+        <div className="space-y-6">
+          {/* Overall Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي المشتركين</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => togglePackageStatus(pkg)}
-                    className={pkg.is_active ? "text-green-600" : "text-red-600"}
-                  >
-                    {pkg.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditPackage(pkg)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deletePackage(pkg.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <Users className="h-5 w-5 text-blue-600" />
+                  <span className="text-2xl font-bold">{totalSubscribers}</span>
                 </div>
-              </div>
-              <CardDescription>{pkg.description}</CardDescription>
-            </CardHeader>
+              </CardContent>
+            </Card>
 
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">المشتركين النشطين</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
-                  <span className="text-2xl font-bold">{pkg.price}</span>
-                  <span className="text-muted-foreground">ر.س</span>
+                  <TrendingUp className="h-5 w-5 text-green-600" />
+                  <span className="text-2xl font-bold text-green-600">{totalActiveSubscribers}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{pkg.duration_months} شهر</span>
-                </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                {pkg.features.map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                    <span className="text-sm">{feature}</span>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">الاشتراكات المنتهية</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-red-600" />
+                  <span className="text-2xl font-bold text-red-600">{totalSubscribers - totalActiveSubscribers}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الإيرادات</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-yellow-600" />
+                  <span className="text-2xl font-bold">{totalRevenue.toLocaleString()}</span>
+                  <span className="text-sm text-muted-foreground">ر.س</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Package Stats */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">إحصائيات الباقات</h3>
+            <div className="grid gap-6">
+              {subscriptionStats.map((stat) => (
+                <Card key={stat.package_id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <Crown className="h-5 w-5 text-purple-600" />
+                        {stat.package_name}
+                      </CardTitle>
+                      <div className="flex items-center gap-4">
+                        <Badge variant="outline" className="gap-1">
+                          <Users className="h-3 w-3" />
+                          {stat.total_subscribers} مشترك
+                        </Badge>
+                        <Badge className="gap-1 bg-green-600">
+                          <TrendingUp className="h-3 w-3" />
+                          {stat.active_subscribers} نشط
+                        </Badge>
+                        <Badge variant="destructive" className="gap-1">
+                          <Clock className="h-3 w-3" />
+                          {stat.expired_subscribers} منتهي
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">إيرادات الباقة:</span>
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="h-4 w-4 text-green-600" />
+                          <span className="font-bold text-green-600">{stat.revenue.toLocaleString()} ر.س</span>
+                        </div>
+                      </div>
+
+                      {stat.subscribers.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium">المشتركين:</h4>
+                          <div className="max-h-40 overflow-y-auto space-y-2">
+                            {stat.subscribers.map((subscriber, index) => (
+                              <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-sm">
+                                <div>
+                                  <span className="font-medium">{subscriber.user_name}</span>
+                                  <span className="text-muted-foreground ml-2">({subscriber.user_email})</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={subscriber.is_active ? "default" : "secondary"}>
+                                    {subscriber.is_active ? 'نشط' : 'منتهي'}
+                                  </Badge>
+                                  {subscriber.is_active && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {subscriber.days_remaining} يوم متبقي
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Package Management */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">إدارة محتوى الباقات</h3>
+            <Button
+              onClick={() => {
+                setEditPackage(emptyPackage);
+                setIsAddingNew(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              إضافة باقة جديدة
+            </Button>
+          </div>
+
+          {/* Packages Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {packages.map((pkg) => (
+              <Card key={pkg.id} className={`relative ${pkg.is_popular ? 'border-yellow-500' : ''}`}>
+                {pkg.is_popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-yellow-500 text-black gap-1">
+                      <Star className="h-3 w-3 fill-current" />
+                      الأكثر شعبية
+                    </Badge>
                   </div>
-                ))}
-              </div>
+                )}
 
-              <Badge variant={pkg.is_active ? "default" : "secondary"}>
-                {pkg.is_active ? 'نشطة' : 'معطلة'}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl">{pkg.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => togglePackageStatus(pkg)}
+                        className={pkg.is_active ? "text-green-600" : "text-red-600"}
+                      >
+                        {pkg.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditPackage(pkg)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deletePackage(pkg.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardDescription>{pkg.description}</CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5 text-green-600" />
+                      <span className="text-2xl font-bold">{pkg.price}</span>
+                      <span className="text-muted-foreground">ر.س</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{pkg.duration_months} شهر</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    {pkg.features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        <span className="text-sm">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Badge variant={pkg.is_active ? "default" : "secondary"}>
+                      {pkg.is_active ? 'نشطة' : 'معطلة'}
+                    </Badge>
+                    
+                    {/* Show subscriber count for this package */}
+                    {(() => {
+                      const stat = subscriptionStats.find(s => s.package_id === pkg.id);
+                      return stat ? (
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <Users className="h-3 w-3" />
+                          <span>{stat.active_subscribers} مشترك نشط</span>
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editPackage && (

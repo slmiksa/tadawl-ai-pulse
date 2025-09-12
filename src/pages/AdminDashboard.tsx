@@ -23,7 +23,7 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { APIManagement } from '@/components/admin/APIManagement';
 import { SiteSettings } from '@/components/admin/SiteSettings';
-import { PackageManagement } from '@/components/admin/PackageManagement';
+import { SubscriptionManagement } from '@/components/admin/SubscriptionManagement';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -84,7 +84,7 @@ const AdminDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="packages" className="flex items-center">
               <Crown className="h-4 w-4 mr-2" />
-              الباقات
+              الاشتراكات
             </TabsTrigger>
             <TabsTrigger value="admins" className="flex items-center">
               <Shield className="h-4 w-4 mr-2" />
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="packages" className="space-y-6">
-            <PackageManagement />
+            <SubscriptionManagement />
           </TabsContent>
 
           <TabsContent value="admins" className="space-y-6">
