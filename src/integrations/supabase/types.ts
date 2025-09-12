@@ -225,6 +225,57 @@ export type Database = {
           },
         ]
       }
+      packages: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_en: string | null
+          display_order: number | null
+          duration_months: number
+          features: Json | null
+          features_en: Json | null
+          id: string
+          is_active: boolean | null
+          is_popular: boolean | null
+          name: string
+          name_en: string | null
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          display_order?: number | null
+          duration_months?: number
+          features?: Json | null
+          features_en?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name: string
+          name_en?: string | null
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          display_order?: number | null
+          duration_months?: number
+          features?: Json | null
+          features_en?: Json | null
+          id?: string
+          is_active?: boolean | null
+          is_popular?: boolean | null
+          name?: string
+          name_en?: string | null
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_holdings: {
         Row: {
           average_cost: number

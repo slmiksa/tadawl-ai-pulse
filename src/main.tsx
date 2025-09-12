@@ -8,6 +8,7 @@ import './index.css';
 
 import Index from './pages/Index';
 import Auth from './pages/Auth';
+import PackageManagement from './pages/PackageManagement';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import NotFound from './pages/NotFound';
@@ -22,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/packages" element={<PackageManagement />} />
             <Route path="/tadawladmin" element={<AdminLogin />} />
             <Route path="/tadawladmin/dashboard" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
