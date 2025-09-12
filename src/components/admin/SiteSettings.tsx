@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useSiteSettingsContext } from '@/contexts/SiteSettingsContext';
 
 interface SiteConfig {
   siteName: string;
@@ -67,6 +68,7 @@ export const SiteSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const { reload } = useSiteSettingsContext();
 
   // Load site settings from database
   const loadSettings = async () => {
@@ -80,25 +82,26 @@ export const SiteSettings = () => {
         // Use default config on error
         setConfig(defaultConfig);
       } else {
-        // Transform the data from database format to SiteConfig format
+        // Transform the data from database format (grouped categories) to SiteConfig
+        const d: any = data || {};
         const transformedConfig: SiteConfig = {
-          siteName: (data as any)?.siteName || defaultConfig.siteName,
-          siteDescription: (data as any)?.siteDescription || defaultConfig.siteDescription,
-          contactEmail: (data as any)?.contactEmail || defaultConfig.contactEmail,
-          faviconUrl: (data as any)?.faviconUrl || defaultConfig.faviconUrl,
-          maintenanceMode: (data as any)?.maintenanceMode || defaultConfig.maintenanceMode,
-          allowRegistration: (data as any)?.allowRegistration || defaultConfig.allowRegistration,
-          requireEmailVerification: (data as any)?.requireEmailVerification || defaultConfig.requireEmailVerification,
-          maxUsersPerDay: (data as any)?.maxUsersPerDay || defaultConfig.maxUsersPerDay,
-          sessionTimeout: (data as any)?.sessionTimeout || defaultConfig.sessionTimeout,
-          primaryColor: (data as any)?.primaryColor || defaultConfig.primaryColor,
-          secondaryColor: (data as any)?.secondaryColor || defaultConfig.secondaryColor,
-          metaTitle: (data as any)?.metaTitle || defaultConfig.metaTitle,
-          metaDescription: (data as any)?.metaDescription || defaultConfig.metaDescription,
-          metaKeywords: (data as any)?.metaKeywords || defaultConfig.metaKeywords,
-          enableEmailNotifications: (data as any)?.enableEmailNotifications || defaultConfig.enableEmailNotifications,
-          enablePushNotifications: (data as any)?.enablePushNotifications || defaultConfig.enablePushNotifications,
-          enableSMSNotifications: (data as any)?.enableSMSNotifications || defaultConfig.enableSMSNotifications,
+          siteName: d.general?.siteName ?? defaultConfig.siteName,
+          siteDescription: d.general?.siteDescription ?? defaultConfig.siteDescription,
+          contactEmail: d.general?.contactEmail ?? defaultConfig.contactEmail,
+          faviconUrl: d.appearance?.faviconUrl ?? defaultConfig.faviconUrl,
+          maintenanceMode: d.security?.maintenanceMode ?? defaultConfig.maintenanceMode,
+          allowRegistration: d.security?.registrationEnabled ?? defaultConfig.allowRegistration,
+          requireEmailVerification: d.security?.emailVerificationRequired ?? defaultConfig.requireEmailVerification,
+          maxUsersPerDay: d.security?.maxUsersPerDay ?? defaultConfig.maxUsersPerDay,
+          sessionTimeout: d.security?.sessionTimeout ?? defaultConfig.sessionTimeout,
+          primaryColor: d.appearance?.primaryColor ?? defaultConfig.primaryColor,
+          secondaryColor: d.appearance?.secondaryColor ?? defaultConfig.secondaryColor,
+          metaTitle: d.seo?.metaTitle ?? defaultConfig.metaTitle,
+          metaDescription: d.seo?.metaDescription ?? defaultConfig.metaDescription,
+          metaKeywords: d.seo?.keywords ?? defaultConfig.metaKeywords,
+          enableEmailNotifications: d.notifications?.emailNotifications ?? defaultConfig.enableEmailNotifications,
+          enablePushNotifications: d.notifications?.pushNotifications ?? defaultConfig.enablePushNotifications,
+          enableSMSNotifications: d.notifications?.smsNotifications ?? defaultConfig.enableSMSNotifications,
         };
         setConfig(transformedConfig);
       }
@@ -165,25 +168,35 @@ export const SiteSettings = () => {
     try {
       setSaveLoading(true);
       
-      // Transform SiteConfig to database format (flat object)
+      // Transform SiteConfig to database format (grouped categories)
       const dbData = {
-        siteName: config.siteName,
-        siteDescription: config.siteDescription,
-        contactEmail: config.contactEmail,
-        faviconUrl: config.faviconUrl,
-        maintenanceMode: config.maintenanceMode,
-        allowRegistration: config.allowRegistration,
-        requireEmailVerification: config.requireEmailVerification,
-        maxUsersPerDay: config.maxUsersPerDay,
-        sessionTimeout: config.sessionTimeout,
-        primaryColor: config.primaryColor,
-        secondaryColor: config.secondaryColor,
-        metaTitle: config.metaTitle,
-        metaDescription: config.metaDescription,
-        metaKeywords: config.metaKeywords,
-        enableEmailNotifications: config.enableEmailNotifications,
-        enablePushNotifications: config.enablePushNotifications,
-        enableSMSNotifications: config.enableSMSNotifications,
+        general: {
+          siteName: config.siteName,
+          siteDescription: config.siteDescription,
+          contactEmail: config.contactEmail,
+        },
+        appearance: {
+          faviconUrl: config.faviconUrl,
+          primaryColor: config.primaryColor,
+          secondaryColor: config.secondaryColor,
+        },
+        security: {
+          maintenanceMode: config.maintenanceMode,
+          registrationEnabled: config.allowRegistration,
+          emailVerificationRequired: config.requireEmailVerification,
+          maxUsersPerDay: config.maxUsersPerDay,
+          sessionTimeout: config.sessionTimeout,
+        },
+        seo: {
+          metaTitle: config.metaTitle,
+          metaDescription: config.metaDescription,
+          keywords: config.metaKeywords,
+        },
+        notifications: {
+          emailNotifications: config.enableEmailNotifications,
+          pushNotifications: config.enablePushNotifications,
+          smsNotifications: config.enableSMSNotifications,
+        }
       };
 
       const { data, error } = await supabase.rpc('update_site_settings', {
@@ -195,6 +208,7 @@ export const SiteSettings = () => {
         toast.error(`خطأ في حفظ الإعدادات: ${error.message}`);
       } else {
         toast.success('تم حفظ الإعدادات بنجاح');
+        try { reload(); } catch {}
       }
     } catch (error: any) {
       console.error('Unexpected error saving settings:', error);
