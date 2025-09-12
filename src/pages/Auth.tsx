@@ -89,11 +89,11 @@ const Auth = () => {
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
           <div className="text-center space-y-4">
-            <div className="w-24 h-24 mx-auto rounded-xl flex items-center justify-center bg-white shadow-lg">
+            <div className="w-32 h-32 mx-auto rounded-2xl flex items-center justify-center bg-white shadow-lg p-4">
               <img 
                 src="/lovable-uploads/150d7d27-c70e-4f8f-a884-200cebdc302a.png" 
                 alt="TadawlAI Logo" 
-                className="w-20 h-20 object-contain"
+                className="w-full h-full object-contain"
               />
             </div>
             <div>
