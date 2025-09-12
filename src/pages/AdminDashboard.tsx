@@ -15,13 +15,15 @@ import {
   Key,
   UserPlus,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Crown
 } from 'lucide-react';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AdminManagement } from '@/components/admin/AdminManagement';
 import { APIManagement } from '@/components/admin/APIManagement';
 import { SiteSettings } from '@/components/admin/SiteSettings';
+import { PackageManagement } from '@/components/admin/PackageManagement';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -71,7 +73,7 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="stats" className="flex items-center">
               <BarChart3 className="h-4 w-4 mr-2" />
               الإحصائيات
@@ -79,6 +81,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="users" className="flex items-center">
               <Users className="h-4 w-4 mr-2" />
               المستخدمين
+            </TabsTrigger>
+            <TabsTrigger value="packages" className="flex items-center">
+              <Crown className="h-4 w-4 mr-2" />
+              الباقات
             </TabsTrigger>
             <TabsTrigger value="admins" className="flex items-center">
               <Shield className="h-4 w-4 mr-2" />
@@ -100,6 +106,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="users" className="space-y-6">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="packages" className="space-y-6">
+            <PackageManagement />
           </TabsContent>
 
           <TabsContent value="admins" className="space-y-6">

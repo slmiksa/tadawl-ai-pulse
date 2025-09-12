@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Crown, 
   Edit, 
@@ -10,12 +14,12 @@ import {
   Plus, 
   Save, 
   X, 
-  ArrowLeft,
   Star,
   DollarSign,
   Calendar,
-  Users,
-  Check
+  Check,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface Package {
@@ -33,9 +37,7 @@ interface Package {
   display_order: number;
 }
 
-const PackageManagement: React.FC = () => {
-  const navigate = useNavigate();
-  const { t, language } = useLanguage();
+export const PackageManagement: React.FC = () => {
   const { toast } = useToast();
   
   const [packages, setPackages] = useState<Package[]>([]);
@@ -61,17 +63,8 @@ const PackageManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    checkAdminAccess();
     fetchPackages();
   }, []);
-
-  const checkAdminAccess = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-  };
 
   const fetchPackages = async () => {
     try {
@@ -180,6 +173,31 @@ const PackageManagement: React.FC = () => {
     }
   };
 
+  const togglePackageStatus = async (pkg: Package) => {
+    try {
+      const { error } = await supabase
+        .from('packages')
+        .update({ is_active: !pkg.is_active })
+        .eq('id', pkg.id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "تم التحديث",
+        description: `تم ${pkg.is_active ? 'إلغاء تفعيل' : 'تفعيل'} الباقة`,
+      });
+      
+      fetchPackages();
+    } catch (error) {
+      console.error('Error toggling package status:', error);
+      toast({
+        title: "خطأ",
+        description: "حدث خطأ في تحديث حالة الباقة",
+        variant: "destructive"
+      });
+    }
+  };
+
   const addFeature = (isEnglish = false) => {
     if (!editPackage) return;
     
@@ -213,184 +231,182 @@ const PackageManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center py-12">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-              <span>العودة</span>
-            </button>
-            <div className="flex items-center space-x-3">
-              <Crown className="w-8 h-8 text-purple-400" />
-              <h1 className="text-3xl font-bold text-white">إدارة الباقات</h1>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setEditPackage(emptyPackage);
-              setIsAddingNew(true);
-            }}
-            className="flex items-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>إضافة باقة جديدة</span>
-          </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold gradient-text">إدارة الباقات</h2>
+          <p className="text-muted-foreground">إدارة باقات الاشتراك والأسعار</p>
         </div>
+        <Button
+          onClick={() => {
+            setEditPackage(emptyPackage);
+            setIsAddingNew(true);
+          }}
+          className="gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          إضافة باقة جديدة
+        </Button>
+      </div>
 
-        {/* Packages List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {packages.map((pkg) => (
-            <div
-              key={pkg.id}
-              className={`bg-gray-800 rounded-lg p-6 border ${
-                pkg.is_popular ? 'border-yellow-500' : 'border-gray-700'
-              } relative`}
-            >
-              {pkg.is_popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-bold flex items-center space-x-1">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span>الأكثر شعبية</span>
-                  </div>
-                </div>
-              )}
+      {/* Packages Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {packages.map((pkg) => (
+          <Card key={pkg.id} className={`relative ${pkg.is_popular ? 'border-yellow-500' : ''}`}>
+            {pkg.is_popular && (
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                <Badge className="bg-yellow-500 text-black gap-1">
+                  <Star className="h-3 w-3 fill-current" />
+                  الأكثر شعبية
+                </Badge>
+              </div>
+            )}
 
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">
-                  {language === 'ar' ? pkg.name : pkg.name_en}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  <button
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xl">{pkg.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => togglePackageStatus(pkg)}
+                    className={pkg.is_active ? "text-green-600" : "text-red-600"}
+                  >
+                    {pkg.is_active ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setEditPackage(pkg)}
-                    className="p-2 text-gray-400 hover:text-white transition-colors"
                   >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => deletePackage(pkg.id)}
-                    className="p-2 text-gray-400 hover:text-red-400 transition-colors"
+                    className="text-red-600 hover:text-red-700"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
+              <CardDescription>{pkg.description}</CardDescription>
+            </CardHeader>
 
-              <p className="text-gray-400 mb-4">
-                {language === 'ar' ? pkg.description : pkg.description_en}
-              </p>
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-green-400" />
-                  <span className="text-2xl font-bold text-white">{pkg.price}</span>
-                  <span className="text-gray-400">ر.س</span>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <span className="text-2xl font-bold">{pkg.price}</span>
+                  <span className="text-muted-foreground">ر.س</span>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-400">{pkg.duration_months} شهر</span>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">{pkg.duration_months} شهر</span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                {(language === 'ar' ? pkg.features : pkg.features_en).map((feature, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
-                    <span className="text-gray-300 text-sm">{feature}</span>
+                {pkg.features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
                   </div>
                 ))}
               </div>
 
-              <div className={`mt-4 text-sm ${pkg.is_active ? 'text-green-400' : 'text-red-400'}`}>
+              <Badge variant={pkg.is_active ? "default" : "secondary"}>
                 {pkg.is_active ? 'نشطة' : 'معطلة'}
-              </div>
-            </div>
-          ))}
-        </div>
+              </Badge>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {/* Edit Modal */}
-        {editPackage && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-800 rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-white">
+      {/* Edit Modal */}
+      {editPackage && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>
                   {isAddingNew ? 'إضافة باقة جديدة' : 'تعديل الباقة'}
-                </h2>
-                <button
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => {
                     setEditPackage(null);
                     setIsAddingNew(false);
                   }}
-                  className="text-gray-400 hover:text-white"
                 >
-                  <X className="w-6 h-6" />
-                </button>
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
+            </CardHeader>
 
+            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Arabic Fields */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">النسخة العربية</h3>
+                  <h3 className="font-semibold">النسخة العربية</h3>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">اسم الباقة</label>
-                    <input
-                      type="text"
+                  <div className="space-y-2">
+                    <Label>اسم الباقة</Label>
+                    <Input
                       value={editPackage.name}
                       onChange={(e) => setEditPackage({ ...editPackage, name: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">الوصف</label>
-                    <textarea
+                  <div className="space-y-2">
+                    <Label>الوصف</Label>
+                    <Textarea
                       value={editPackage.description}
                       onChange={(e) => setEditPackage({ ...editPackage, description: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white h-20"
+                      rows={3}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">الميزات</label>
+                  <div className="space-y-2">
+                    <Label>الميزات</Label>
                     <div className="space-y-2">
                       {editPackage.features.map((feature, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <span className="flex-1 text-white bg-gray-700 px-3 py-2 rounded">{feature}</span>
-                          <button
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={feature} readOnly className="flex-1" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => removeFeature(index, false)}
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-600"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
+                      <div className="flex gap-2">
+                        <Input
                           value={newFeature}
                           onChange={(e) => setNewFeature(e.target.value)}
                           placeholder="أضف ميزة جديدة"
-                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                           onKeyPress={(e) => e.key === 'Enter' && addFeature(false)}
                         />
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => addFeature(false)}
-                          className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
                         >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -398,56 +414,55 @@ const PackageManagement: React.FC = () => {
 
                 {/* English Fields */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-white">English Version</h3>
+                  <h3 className="font-semibold">English Version</h3>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Package Name</label>
-                    <input
-                      type="text"
+                  <div className="space-y-2">
+                    <Label>Package Name</Label>
+                    <Input
                       value={editPackage.name_en}
                       onChange={(e) => setEditPackage({ ...editPackage, name_en: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
-                    <textarea
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
                       value={editPackage.description_en}
                       onChange={(e) => setEditPackage({ ...editPackage, description_en: e.target.value })}
-                      className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white h-20"
+                      rows={3}
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">Features</label>
+                  <div className="space-y-2">
+                    <Label>Features</Label>
                     <div className="space-y-2">
                       {editPackage.features_en.map((feature, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <span className="flex-1 text-white bg-gray-700 px-3 py-2 rounded">{feature}</span>
-                          <button
+                        <div key={index} className="flex items-center gap-2">
+                          <Input value={feature} readOnly className="flex-1" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => removeFeature(index, true)}
-                            className="text-red-400 hover:text-red-300"
+                            className="text-red-600"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
-                      <div className="flex space-x-2">
-                        <input
-                          type="text"
+                      <div className="flex gap-2">
+                        <Input
                           value={newFeatureEn}
                           onChange={(e) => setNewFeatureEn(e.target.value)}
                           placeholder="Add new feature"
-                          className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                           onKeyPress={(e) => e.key === 'Enter' && addFeature(true)}
                         />
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => addFeature(true)}
-                          className="bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700"
                         >
-                          <Plus className="w-4 h-4" />
-                        </button>
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -455,34 +470,31 @@ const PackageManagement: React.FC = () => {
               </div>
 
               {/* Common Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">السعر (ر.س)</label>
-                  <input
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label>السعر (ر.س)</Label>
+                  <Input
                     type="number"
                     value={editPackage.price}
                     onChange={(e) => setEditPackage({ ...editPackage, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">المدة (شهر)</label>
-                  <input
+                <div className="space-y-2">
+                  <Label>المدة (شهر)</Label>
+                  <Input
                     type="number"
                     value={editPackage.duration_months}
                     onChange={(e) => setEditPackage({ ...editPackage, duration_months: parseInt(e.target.value) || 1 })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">ترتيب العرض</label>
-                  <input
+                <div className="space-y-2">
+                  <Label>ترتيب العرض</Label>
+                  <Input
                     type="number"
                     value={editPackage.display_order}
                     onChange={(e) => setEditPackage({ ...editPackage, display_order: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
 
@@ -494,7 +506,7 @@ const PackageManagement: React.FC = () => {
                       onChange={(e) => setEditPackage({ ...editPackage, is_active: e.target.checked })}
                       className="rounded"
                     />
-                    <label className="text-sm text-gray-300">نشطة</label>
+                    <Label>نشطة</Label>
                   </div>
                   
                   <div className="flex items-center space-x-2">
@@ -504,37 +516,33 @@ const PackageManagement: React.FC = () => {
                       onChange={(e) => setEditPackage({ ...editPackage, is_popular: e.target.checked })}
                       className="rounded"
                     />
-                    <label className="text-sm text-gray-300">الأكثر شعبية</label>
+                    <Label>الأكثر شعبية</Label>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center space-x-4 mt-6">
-                <button
-                  onClick={savePackage}
-                  className="flex items-center space-x-2 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>حفظ</span>
-                </button>
-                <button
+              <div className="flex items-center gap-4">
+                <Button onClick={savePackage} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  حفظ
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setEditPackage(null);
                     setIsAddingNew(false);
                   }}
-                  className="flex items-center space-x-2 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                  className="gap-2"
                 >
-                  <X className="w-4 h-4" />
-                  <span>إلغاء</span>
-                </button>
+                  <X className="h-4 w-4" />
+                  إلغاء
+                </Button>
               </div>
-            </div>
-          </div>
-        )}
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
-
-export default PackageManagement;

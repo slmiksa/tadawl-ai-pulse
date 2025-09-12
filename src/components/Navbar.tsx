@@ -49,10 +49,6 @@ const Navbar: React.FC<NavbarProps> = ({
     label: t('nav.subscription'),
     icon: Crown
   }, {
-    id: 'packages',
-    label: 'الباقات',
-    icon: Crown
-  }, {
     id: 'profile',
     label: t('nav.profile'),
     icon: User
@@ -85,10 +81,6 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
   const handleTabChange = (tab: string) => {
-    if (tab === 'packages') {
-      navigate('/packages');
-      return;
-    }
     onTabChange(tab);
     setIsMobileMenuOpen(false);
   };
