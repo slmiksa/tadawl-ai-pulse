@@ -155,23 +155,24 @@ const SubscriptionPackages: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
       {/* Header */}
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center mb-8">
+        {/* Back Button - Fixed positioning with better visibility */}
+        <div className="mb-6">
           <button
             onClick={() => navigate('/')}
-            className="absolute left-4 top-8 flex items-center space-x-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-2 bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 rounded-lg px-4 py-2 text-gray-300 hover:text-white hover:bg-gray-700/80 hover:border-gray-600 transition-all duration-200 group"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span>العودة</span>
+            <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200" />
+            <span className="font-medium">العودة</span>
           </button>
-          
-          <div className="text-center">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent mb-4">
-              باقات الاشتراك
-            </h1>
-            <p className="text-xl text-gray-300">
-              اختر الباقة المناسبة لاحتياجاتك الاستثمارية
-            </p>
-          </div>
+        </div>
+
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent mb-4">
+            باقات الاشتراك
+          </h1>
+          <p className="text-xl text-gray-300">
+            اختر الباقة المناسبة لاحتياجاتك الاستثمارية
+          </p>
         </div>
 
         {/* Packages Grid */}
