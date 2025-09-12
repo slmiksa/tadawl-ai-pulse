@@ -50,10 +50,11 @@ interface SubscriptionStats {
   revenue: number;
   subscribers: Array<{
     user_id: string;
-    user_email: string;
     user_name: string;
-    start_date: string;
-    end_date: string;
+    user_username?: string;
+    user_email?: string;
+    start_date: string | null;
+    end_date: string | null;
     is_active: boolean;
     days_remaining: number;
   }>;
@@ -129,20 +130,20 @@ export const SubscriptionManagement: React.FC = () => {
           // Get user profile data separately
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, username')
             .eq('id', sub.user_id)
             .maybeSingle();
 
-          const endDate = new Date(sub.end_date);
+          const endDate = sub.end_date ? new Date(sub.end_date) : new Date(0);
           const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
           
           return {
             user_id: sub.user_id,
-            user_email: `user${sub.user_id.slice(-4)}@example.com`, // Generate a sample email
             user_name: profileData?.full_name || `مستخدم ${sub.user_id.slice(-4)}`,
-            start_date: sub.start_date,
-            end_date: sub.end_date,
-            is_active: sub.is_active && endDate > now,
+            user_username: profileData?.username || undefined,
+            start_date: sub.start_date || null,
+            end_date: sub.end_date || null,
+            is_active: Boolean(sub.is_active) && endDate > now,
             days_remaining: daysRemaining
           };
         });
@@ -503,7 +504,7 @@ export const SubscriptionManagement: React.FC = () => {
                         <thead>
                           <tr className="border-b">
                             <th className="text-right py-3 px-4 font-medium text-muted-foreground">اسم العميل</th>
-                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">البريد الإلكتروني</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">اسم المستخدم</th>
                             <th className="text-right py-3 px-4 font-medium text-muted-foreground">الباقة</th>
                             <th className="text-right py-3 px-4 font-medium text-muted-foreground">الحالة</th>
                             <th className="text-right py-3 px-4 font-medium text-muted-foreground">تاريخ البداية</th>
@@ -528,7 +529,7 @@ export const SubscriptionManagement: React.FC = () => {
                                 </div>
                               </td>
                               <td className="py-3 px-4 text-muted-foreground">
-                                {subscriber.user_email}
+                                {subscriber.user_username ? `@${subscriber.user_username}` : '-'}
                               </td>
                               <td className="py-3 px-4">
                                 <Badge variant="outline" className="gap-1">
