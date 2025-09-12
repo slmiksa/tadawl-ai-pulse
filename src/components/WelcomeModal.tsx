@@ -41,7 +41,7 @@ const WelcomeModal = ({
               <div>
                 <h3 className="text-xl font-bold text-white">
               </h3>
-                <p className="text-purple-300">مؤسسة المنصة</p>
+                <p className="text-purple-300">  أنا منى العنزي مؤسسة المنصة</p>
               </div>
             </div>
             
