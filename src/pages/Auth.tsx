@@ -88,16 +88,16 @@ const Auth = () => {
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
-          <div className="flex items-center space-x-4">
-            <div className="w-20 h-20 rounded-xl flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/20">
+          <div className="text-center space-y-4">
+            <div className="w-24 h-24 mx-auto rounded-xl flex items-center justify-center bg-white shadow-lg">
               <img 
-                src="/lovable-uploads/de1ce800-7b6f-4109-8741-aa8f6523607f.png" 
+                src="/lovable-uploads/150d7d27-c70e-4f8f-a884-200cebdc302a.png" 
                 alt="TadawlAI Logo" 
-                className="w-16 h-16 object-contain"
+                className="w-20 h-20 object-contain"
               />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">   TadawlAI  </h1>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">TadawlAI</h1>
               <p className="text-xl text-gray-300">منصة التداول الذكي</p>
             </div>
           </div>
