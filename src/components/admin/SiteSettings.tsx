@@ -14,7 +14,10 @@ import {
   Database,
   Palette,
   Bell,
-  Loader2
+  Loader2,
+  Upload,
+  Image,
+  Tag
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -289,6 +292,87 @@ export const SiteSettings = () => {
           )}
         </Button>
       </div>
+
+      {/* Branding Settings */}
+      <Card className="glass border-primary/10">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Tag className="h-5 w-5 mr-2 text-primary" />
+            العلامة التجارية
+          </CardTitle>
+          <CardDescription>
+            إدارة اسم الموقع وأيقونة علامة التبويب
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="brandingSiteName">اسم الموقع</Label>
+                <Input
+                  id="brandingSiteName"
+                  value={config.siteName}
+                  onChange={(e) => updateConfig('siteName', e.target.value)}
+                  placeholder="أدخل اسم الموقع"
+                />
+                <p className="text-xs text-muted-foreground">
+                  سيظهر في عنوان علامة التبويب والشعار
+                </p>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="favicon">أيقونة علامة التبويب (Favicon)</Label>
+                <div className="flex items-center space-x-4 space-x-reverse">
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      id="faviconUrl"
+                      value={config.faviconUrl}
+                      onChange={(e) => updateConfig('faviconUrl', e.target.value)}
+                      placeholder="رابط الأيقونة أو /path/to/favicon.png"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ضع رابط الأيقونة أو المسار النسبي للملف
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2 space-x-reverse">
+                    <div className="w-8 h-8 border border-border rounded-md bg-background p-1">
+                      {config.faviconUrl ? (
+                        <img 
+                          src={config.faviconUrl} 
+                          alt="Favicon preview" 
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Image className="w-full h-full text-muted-foreground" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg space-y-2">
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  <strong>نصيحة:</strong> استخدم صور PNG أو JPG بحجم 32x32 أو 16x16 بكسل للحصول على أفضل جودة
+                </p>
+                <p className="text-xs text-blue-600/80 dark:text-blue-400/80">
+                  <strong>مهم:</strong> ملفات ICO غير مدعومة حالياً. يُرجى استخدام PNG أو JPG
+                </p>
+              </div>
+
+              <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <p className="text-sm text-green-600 dark:text-green-400">
+                  <strong>معاينة مباشرة:</strong> ستظهر التغييرات فوراً في عنوان علامة التبويب الحالية بعد الحفظ
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* General Settings */}
       <Card className="glass border-primary/10">

@@ -15,8 +15,9 @@ export const SiteWrapper = () => {
 
   // Update document title and meta tags based on site settings
   useEffect(() => {
-    if (!loading) {
-      document.title = settings.seoSettings.metaTitle;
+    if (!loading && settings) {
+      // Update document title
+      document.title = `${settings.siteName} - ${settings.seoSettings.metaTitle}`;
       
       // Update meta description
       let metaDescription = document.querySelector('meta[name="description"]');
@@ -37,18 +38,34 @@ export const SiteWrapper = () => {
       metaKeywords.setAttribute('content', settings.seoSettings.keywords);
 
       // Update favicon
-      let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-      if (!favicon) {
-        favicon = document.createElement('link');
-        favicon.setAttribute('rel', 'icon');
-        document.head.appendChild(favicon);
+      const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+      if (favicon && settings.faviconUrl) {
+        favicon.href = settings.faviconUrl;
+        // Add error handling for favicon
+        favicon.onerror = () => {
+          console.warn('Could not load favicon:', settings.faviconUrl);
+          // Fallback to default favicon
+          favicon.href = '/favicon.ico';
+        };
+      } else if (settings.faviconUrl) {
+        const newFavicon = document.createElement('link');
+        newFavicon.rel = 'icon';
+        newFavicon.href = settings.faviconUrl;
+        newFavicon.onerror = () => {
+          console.warn('Could not load favicon:', settings.faviconUrl);
+          newFavicon.href = '/favicon.ico';
+        };
+        document.head.appendChild(newFavicon);
       }
-      favicon.href = settings.faviconUrl;
 
       // Update CSS custom properties for theme colors
       const root = document.documentElement;
-      root.style.setProperty('--site-primary', settings.primaryColor);
-      root.style.setProperty('--site-secondary', settings.secondaryColor);
+      if (settings.primaryColor) {
+        root.style.setProperty('--site-primary', settings.primaryColor);
+      }
+      if (settings.secondaryColor) {
+        root.style.setProperty('--site-secondary', settings.secondaryColor);
+      }
     }
   }, [settings, loading]);
 
