@@ -91,7 +91,7 @@ const Auth = () => {
           <div className="flex items-center space-x-4">
             <div className="w-20 h-20 rounded-xl flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/20">
               <img 
-                src="/lovable-uploads/667fec9c-4dd6-4111-9d9c-9041262a3376.png" 
+                src="/lovable-uploads/de1ce800-7b6f-4109-8741-aa8f6523607f.png" 
                 alt="TadawlAI Logo" 
                 className="w-16 h-16 object-contain"
               />
