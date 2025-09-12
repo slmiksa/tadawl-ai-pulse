@@ -91,7 +91,7 @@ const Auth = () => {
           <div className="text-center space-y-4">
             <div className="mx-auto p-6 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl hover-scale">
               <img 
-                src="/lovable-uploads/34457f90-e80f-42af-97f8-534889c570a9.png" 
+                src="/lovable-uploads/79808dce-ae1d-45f9-9272-ae49771610e2.png" 
                 alt="TadawlAI Logo" 
                 className="w-48 h-auto object-contain mx-auto animate-fade-in"
               />
