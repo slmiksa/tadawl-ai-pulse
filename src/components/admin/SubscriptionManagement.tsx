@@ -437,7 +437,7 @@ export const SubscriptionManagement: React.FC = () => {
           </div>
 
           {/* Package Stats */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <h3 className="text-lg font-semibold">إحصائيات الباقات</h3>
             <div className="grid gap-6">
               {subscriptionStats.map((stat) => (
@@ -473,37 +473,110 @@ export const SubscriptionManagement: React.FC = () => {
                           <span className="font-bold text-green-600">{stat.revenue.toLocaleString()} ر.س</span>
                         </div>
                       </div>
-
-                      {stat.subscribers.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="font-medium">المشتركين:</h4>
-                          <div className="max-h-40 overflow-y-auto space-y-2">
-                            {stat.subscribers.map((subscriber, index) => (
-                              <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg text-sm">
-                                <div>
-                                  <span className="font-medium">{subscriber.user_name}</span>
-                                  <span className="text-muted-foreground ml-2">({subscriber.user_email})</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={subscriber.is_active ? "default" : "secondary"}>
-                                    {subscriber.is_active ? 'نشط' : 'منتهي'}
-                                  </Badge>
-                                  {subscriber.is_active && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {subscriber.days_remaining} يوم متبقي
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+
+            {/* All Subscribers Table */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-blue-600" />
+                  جميع المشتركين
+                </CardTitle>
+                <CardDescription>
+                  عرض شامل لجميع المشتركين مع تفاصيل اشتراكاتهم
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {subscriptionStats.flatMap(stat => 
+                    stat.subscribers.map(subscriber => ({
+                      ...subscriber,
+                      package_name: stat.package_name
+                    }))
+                  ).length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">اسم العميل</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">البريد الإلكتروني</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">الباقة</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">الحالة</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">تاريخ البداية</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">تاريخ النهاية</th>
+                            <th className="text-right py-3 px-4 font-medium text-muted-foreground">الأيام المتبقية</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {subscriptionStats.flatMap(stat => 
+                            stat.subscribers.map(subscriber => ({
+                              ...subscriber,
+                              package_name: stat.package_name
+                            }))
+                          ).map((subscriber, index) => (
+                            <tr key={index} className="border-b hover:bg-muted/50 transition-colors">
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                    {subscriber.user_name.charAt(0)}
+                                  </div>
+                                  <span className="font-medium">{subscriber.user_name}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-muted-foreground">
+                                {subscriber.user_email}
+                              </td>
+                              <td className="py-3 px-4">
+                                <Badge variant="outline" className="gap-1">
+                                  <Crown className="h-3 w-3" />
+                                  {subscriber.package_name}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4">
+                                <Badge variant={subscriber.is_active ? "default" : "secondary"} className="gap-1">
+                                  {subscriber.is_active ? (
+                                    <><TrendingUp className="h-3 w-3" /> نشط</>
+                                  ) : (
+                                    <><Clock className="h-3 w-3" /> منتهي</>
+                                  )}
+                                </Badge>
+                              </td>
+                              <td className="py-3 px-4 text-sm text-muted-foreground">
+                                {new Date(subscriber.start_date).toLocaleDateString('ar-SA')}
+                              </td>
+                              <td className="py-3 px-4 text-sm text-muted-foreground">
+                                {new Date(subscriber.end_date).toLocaleDateString('ar-SA')}
+                              </td>
+                              <td className="py-3 px-4">
+                                {subscriber.is_active ? (
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 text-green-600" />
+                                    <span className="text-sm font-medium text-green-600">
+                                      {subscriber.days_remaining} يوم
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-sm text-red-600">منتهي</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>لا يوجد مشتركين حالياً</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       ) : (
