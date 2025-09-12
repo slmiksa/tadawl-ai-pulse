@@ -89,8 +89,12 @@ const Auth = () => {
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-yellow-600 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-8 h-8 text-white" />
+            <div className="w-20 h-20 rounded-xl flex items-center justify-center bg-white/10 backdrop-blur-sm border border-white/20">
+              <img 
+                src="/lovable-uploads/667fec9c-4dd6-4111-9d9c-9041262a3376.png" 
+                alt="TadawlAI Logo" 
+                className="w-16 h-16 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-yellow-400 bg-clip-text text-transparent">   TadawlAI  </h1>
