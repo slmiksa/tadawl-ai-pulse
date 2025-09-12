@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Mail, Eye, EyeOff, TrendingUp, ArrowRight, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 const Auth = () => {
@@ -12,9 +12,17 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const {
-    toast
+  const { 
+    toast 
   } = useToast();
+  const location = useLocation();
+  const [showLogoutMessage, setShowLogoutMessage] = useState<boolean>(Boolean((location.state as any)?.showLogoutMessage));
+  useEffect(() => {
+    if (showLogoutMessage) {
+      const timer = setTimeout(() => setShowLogoutMessage(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showLogoutMessage]);
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
@@ -184,8 +192,18 @@ const Auth = () => {
               </button>
             </p>
           </div>
+          </div>
         </div>
-      </div>
-    </div>;
+
+        {showLogoutMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-10 bg-gray-900/95 border border-gray-700 rounded-2xl shadow-xl p-6 w-[90%] max-w-md text-center animate-in fade-in zoom-in-95">
+              <h4 className="text-xl font-bold text-white">لا تغيب عنا كثير</h4>
+              <p className="text-gray-300 mt-2">ننتظر عودتك بفارغ الصبر 💜</p>
+            </div>
+          </div>
+        )}
+      </div>;
 };
 export default Auth;

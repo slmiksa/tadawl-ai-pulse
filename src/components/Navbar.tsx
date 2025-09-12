@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SearchModal from './SearchModal';
+import { useNavigate } from 'react-router-dom';
 interface NavbarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -17,9 +18,8 @@ const Navbar: React.FC<NavbarProps> = ({
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const {
-    t
-  } = useLanguage();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
   const navItems = [{
     id: 'home',
     label: t('nav.home'),
@@ -72,7 +72,13 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      setIsMobileMenuOpen(false);
+      navigate('/auth', { state: { showLogoutMessage: true } });
+    } else {
+      console.error('Logout error:', error);
+    }
   };
   const handleTabChange = (tab: string) => {
     onTabChange(tab);
