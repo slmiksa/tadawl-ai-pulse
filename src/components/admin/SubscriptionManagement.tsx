@@ -547,10 +547,10 @@ export const SubscriptionManagement: React.FC = () => {
                                 </Badge>
                               </td>
                               <td className="py-3 px-4 text-sm text-muted-foreground">
-                                {new Date(subscriber.start_date).toLocaleDateString('ar-SA')}
+                                {subscriber.start_date ? new Date(subscriber.start_date).toLocaleDateString('ar-SA') : '-'}
                               </td>
                               <td className="py-3 px-4 text-sm text-muted-foreground">
-                                {new Date(subscriber.end_date).toLocaleDateString('ar-SA')}
+                                {subscriber.end_date ? new Date(subscriber.end_date).toLocaleDateString('ar-SA') : '-'}
                               </td>
                               <td className="py-3 px-4">
                                 {subscriber.is_active ? (
