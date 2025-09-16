@@ -91,8 +91,8 @@ const Auth = () => {
         {/* Left Side - Features */}
         <div className="text-white space-y-8">
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-36 h-36 rounded-3xl flex items-center justify-center backdrop-blur-sm border border-white/20 bg-white shadow-lg hover:scale-105 transition-all duration-300 animate-fade-in">
-              <img src="/lovable-uploads/tadawl-ai-logo.png" alt="TadawlAI Logo" className="w-40 h-40 object-contain" />
+            <div className="flex items-center justify-center hover:scale-105 transition-all duration-300 animate-fade-in">
+              <img src="/lovable-uploads/tadawl-ai-main-logo.png" alt="TadawlAI Logo" className="w-48 h-48 object-contain" />
             </div>
             <div className="text-center">
               
