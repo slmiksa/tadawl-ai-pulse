@@ -47,7 +47,7 @@ const defaultConfig: SiteConfig = {
   siteName: 'تداول الذكي',
   siteDescription: 'منصة متقدمة لتداول الأسهم السعودية مع ميزات الذكاء الاصطناعي والتحليل المتقدم',
   contactEmail: 'info@tadawlai.com',
-  faviconUrl: '/favicon.ico',
+  faviconUrl: '/lovable-uploads/site-icon.png',
   maintenanceMode: false,
   allowRegistration: true,
   requireEmailVerification: true,

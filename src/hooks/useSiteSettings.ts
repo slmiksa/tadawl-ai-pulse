@@ -47,7 +47,7 @@ const defaultSettings: SiteSettings = {
   primaryColor: '#8B5CF6',
   secondaryColor: '#06B6D4',
   logoUrl: '/logo.png',
-  faviconUrl: '/favicon.ico',
+  faviconUrl: '/lovable-uploads/site-icon.png',
   socialMediaLinks: {
     twitter: '',
     linkedin: '',

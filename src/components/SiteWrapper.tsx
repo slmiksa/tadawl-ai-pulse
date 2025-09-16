@@ -46,7 +46,7 @@ export const SiteWrapper = () => {
         favicon.onerror = () => {
           console.warn('Could not load favicon:', settings.faviconUrl);
           // Fallback to default favicon
-          favicon.href = '/favicon.ico';
+          favicon.href = '/lovable-uploads/site-icon.png';
         };
       } else if (settings.faviconUrl) {
         const newFavicon = document.createElement('link');
@@ -54,7 +54,7 @@ export const SiteWrapper = () => {
         newFavicon.href = settings.faviconUrl;
         newFavicon.onerror = () => {
           console.warn('Could not load favicon:', settings.faviconUrl);
-          newFavicon.href = '/favicon.ico';
+          newFavicon.href = '/lovable-uploads/site-icon.png';
         };
         document.head.appendChild(newFavicon);
       }
